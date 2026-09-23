@@ -23,7 +23,7 @@ export const donorSchema = z
 			"Other",
 		]),
 		otherPaymentMode: z.string().trim().optional(),
-		amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+		amount: z.coerce.number().min(1, "Amount must be greater than 0").finite(),
 	})
 	.superRefine((data, ctx) => {
 		if (

@@ -9,22 +9,20 @@ export default async function AdminLayout({
 	children: React.ReactNode;
 }) {
 	const session = await auth();
-	if (!session?.user) redirect("/login");
+	if (!session?.user || session.user.role !== "ADMIN") redirect("/login");
 
 	return (
-		<div className="min-h-screen bg-[#f8fafc]">
-			<div className="fixed inset-y-0 left-0 z-50">
-				<AdminSidebar
-					userName={session.user.name || "System Admin"}
-					role="Administrator"
-				/>
-			</div>
-			<div className="flex flex-col min-h-screen md:pl-64">
+		<div className="min-h-screen flex flex-col md:flex-row bg-[#f8fafc]">
+			<AdminSidebar
+				userName={session.user.name || "System Admin"}
+				role="Administrator"
+			/>
+			<div className="flex-1 flex flex-col h-screen overflow-hidden">
 				<AdminHeader
 					userName={session.user.name || "System Admin"}
 					role="Administrator"
 				/>
-				<main className="flex-1 p-4 md:p-8">
+				<main className="flex-1 p-4 md:p-8 overflow-y-auto">
 					<div className="max-w-[1200px] mx-auto">{children}</div>
 				</main>
 			</div>

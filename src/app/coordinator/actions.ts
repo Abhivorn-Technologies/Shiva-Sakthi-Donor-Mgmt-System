@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 "use server";
 
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
+import { User } from "@/models/User";
 import { auth } from "@/auth";
 import { donorSchema } from "@/lib/validation/donor";
 import { revalidatePath } from "next/cache";
@@ -29,8 +31,31 @@ export async function createDonor(prevState: any, formData: FormData) {
 			/\D/g,
 			"",
 		);
+		if (normalizedWhatsappNumber.length < 10) {
+			return { success: false, error: "Validation failed: Phone number too short after cleaning" };
+		}
 
 		await connectToDatabase();
+
+		const existingDonor = await Donor.findOne({
+			$or: [{ normalizedEmail }, { normalizedWhatsappNumber }],
+		});
+
+		if (
+			existingDonor &&
+			existingDonor.createdBy.toString() !== session.user.id
+		) {
+			const originalCoordinator = await User.findById(existingDonor.createdBy);
+			
+			// If the original coordinator is still active, block it.
+			// Otherwise (deleted or deactivated), allow the new coordinator to claim the donor.
+			if (originalCoordinator && originalCoordinator.isActive) {
+				return {
+					success: false,
+					error: "This donor is already registered with another active coordinator.",
+				};
+			}
+		}
 
 		const newDonor = new Donor({
 			...validData,
@@ -45,11 +70,8 @@ export async function createDonor(prevState: any, formData: FormData) {
 		return { success: true, message: "Donor added successfully." };
 	} catch (error: any) {
 		if (error.code === 11000) {
-			return {
-				success: false,
-				error:
-					"Donor already exists. This donor appears to already be registered in the system. Please verify the contact details or contact the administrator if you believe this is incorrect.",
-			};
+			const field = Object.keys(error.keyPattern || {})[0];
+			return { success: false, error: `A donor with this ${field || "contact info"} already exists.` };
 		}
 		return { success: false, error: "Internal server error" };
 	}

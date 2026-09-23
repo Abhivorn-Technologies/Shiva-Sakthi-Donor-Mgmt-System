@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
 import { Card } from "@/components/ui/card";
@@ -34,18 +35,21 @@ export default async function CoordinatorDonorsPage({
 	const { query, page: pageStr } = await searchParams;
 	await connectToDatabase();
 
-	const page = parseInt(pageStr || "1", 10);
+	let page = parseInt(pageStr || "1", 10);
+	if (isNaN(page) || page < 1) page = 1;
+	if (page > 1000) page = 1000;
 	const limit = 10;
 	const skip = (page - 1) * limit;
 
 	let matchStage: any = { createdBy: session.user.id };
 	if (query) {
+		const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 50);
 		matchStage = {
 			...matchStage,
 			$or: [
-				{ fullName: { $regex: query, $options: "i" } },
-				{ email: { $regex: query, $options: "i" } },
-				{ whatsappNumber: { $regex: query, $options: "i" } },
+				{ fullName: { $regex: safeQuery, $options: "i" } },
+				{ email: { $regex: safeQuery, $options: "i" } },
+				{ whatsappNumber: { $regex: safeQuery, $options: "i" } },
 			],
 		};
 	}

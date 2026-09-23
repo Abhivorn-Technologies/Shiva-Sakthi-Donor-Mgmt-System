@@ -41,14 +41,12 @@ export function AddDonorForm() {
 	const [paymentMode, setPaymentMode] = useState<string>("");
 	const [success, setSuccess] = useState(false);
 
-	useEffect(() => {
-		if (state?.success) {
-			setSuccess(true);
-			setPaymentMode("");
-		} else {
-			setSuccess(false);
-		}
-	}, [state]);
+	if (state?.success && !success) {
+		setSuccess(true);
+		setPaymentMode("");
+	} else if (!state?.success && success) {
+		setSuccess(false);
+	}
 
 	if (success) {
 		return (

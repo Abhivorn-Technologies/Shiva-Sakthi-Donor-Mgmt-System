@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
 	MoreHorizontal,
@@ -8,8 +10,12 @@ import {
 	UserX,
 	UserCheck,
 	Trash2,
+	Eye,
+	EyeOff,
+	Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -36,17 +42,21 @@ export function CoordinatorRow({ user }: { user: any }) {
 	const [resetDialogOpen, setResetDialogOpen] = useState(false);
 	const [newPassword, setNewPassword] = useState("");
 	const [isResetting, setIsResetting] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
 
 	const handleResetPassword = async () => {
-		if (newPassword.length < 6) return alert("Password too short");
+		if (newPassword.length < 6) {
+			toast.error("Password must be at least 6 characters.");
+			return;
+		}
 		setIsResetting(true);
 		try {
 			await resetCoordinatorPassword(user._id.toString(), newPassword);
 			setResetDialogOpen(false);
 			setNewPassword("");
-			alert("Password reset successfully");
+			toast.success("Password reset successfully!");
 		} catch (e) {
-			alert("Failed to reset password");
+			toast.error("Failed to reset password. Please try again.");
 		}
 		setIsResetting(false);
 	};
@@ -70,7 +80,13 @@ export function CoordinatorRow({ user }: { user: any }) {
 					</span>
 				</TableCell>
 				<TableCell className="text-slate-500">
-					{new Date(user.createdAt || Date.now()).toLocaleDateString("en-GB")}
+					{user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "-"}
+				</TableCell>
+				<TableCell className="text-right font-medium">
+					{user.totalDonors || 0}
+				</TableCell>
+				<TableCell className="text-right font-bold text-emerald-600">
+					₹{(user.totalRevenue || 0).toLocaleString("en-IN")}
 				</TableCell>
 				<TableCell>
 					<DropdownMenu>
@@ -86,6 +102,13 @@ export function CoordinatorRow({ user }: { user: any }) {
 							<MoreHorizontal className="h-4 w-4 text-slate-500" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-48">
+							<Link href={`/admin/donors?coordinatorId=${user._id.toString()}`}>
+								<DropdownMenuItem className="cursor-pointer">
+									<Users className="mr-2 h-4 w-4" /> View Donors
+								</DropdownMenuItem>
+							</Link>
+							<DropdownMenuSeparator />
+							
 							<form
 								action={deactivateCoordinator.bind(
 									null,
@@ -141,13 +164,27 @@ export function CoordinatorRow({ user }: { user: any }) {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="flex items-center space-x-2 py-4">
-						<Input
-							id="password"
-							type="password"
-							placeholder="New password"
-							value={newPassword}
-							onChange={(e) => setNewPassword(e.target.value)}
-						/>
+						<div className="relative w-full">
+							<Input
+								id="password"
+								type={showPassword ? "text" : "password"}
+								placeholder="New password"
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								className="pr-10"
+							/>
+							<button
+								type="button"
+								onClick={() => setShowPassword(!showPassword)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+							>
+								{showPassword ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
+						</div>
 					</div>
 					<DialogFooter className="sm:justify-end">
 						<Button

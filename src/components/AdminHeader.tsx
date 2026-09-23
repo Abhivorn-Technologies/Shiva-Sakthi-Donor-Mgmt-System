@@ -26,7 +26,7 @@ import {
 } from "./ui/sheet";
 import { logoutAction } from "@/app/admin/logout-action";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function AdminHeader({
@@ -45,6 +45,23 @@ export function AdminHeader({
 		{ name: "Coordinators", href: "/admin/coordinators", icon: UserCog },
 	];
 
+	const searchParams = useSearchParams();
+	const router = useRouter();
+
+	const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const query = (e.currentTarget.elements.namedItem("search") as HTMLInputElement).value;
+		const params = new URLSearchParams(searchParams.toString());
+		if (query) {
+			params.set("query", query);
+		} else {
+			params.delete("query");
+		}
+		params.delete("page");
+		
+		router.push(`/admin/search?${params.toString()}`);
+	};
+
 	return (
 		<header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 shadow-sm">
 			<div className="flex items-center gap-4 flex-1">
@@ -54,7 +71,7 @@ export function AdminHeader({
 					</SheetTrigger>
 					<SheetContent
 						side="left"
-						className="w-[280px] bg-[#0B1120] text-white border-slate-800 p-0"
+						className="w-[280px] bg-white border-r border-slate-200 p-0"
 					>
 						<div className="flex flex-col h-full">
 							<SheetHeader className="p-6 text-left">
@@ -63,10 +80,10 @@ export function AdminHeader({
 										<LayoutDashboard className="w-5 h-5 text-white" />
 									</div>
 									<div>
-										<div className="font-bold text-lg tracking-tight leading-tight text-white">
+										<div className="font-bold text-lg tracking-tight leading-tight text-slate-900">
 											Admin Panel
 										</div>
-										<div className="text-xs text-slate-400 font-medium">
+										<div className="text-xs text-slate-500 font-medium">
 											Manage • Monitor • Grow
 										</div>
 									</div>
@@ -82,8 +99,8 @@ export function AdminHeader({
 											onClick={() => setOpen(false)}
 											className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
 												isActive
-													? "bg-blue-600 text-white shadow-md shadow-blue-900/20"
-													: "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+													? "bg-blue-600 text-white shadow-md shadow-blue-200"
+													: "text-slate-600 hover:bg-slate-50 hover:text-blue-600"
 											}`}
 										>
 											<item.icon className="w-4 h-4" />
@@ -97,11 +114,15 @@ export function AdminHeader({
 				</Sheet>
 
 				<div className="relative w-full max-w-md hidden sm:block">
-					<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-					<Input
-						placeholder="Search donors, coordinators..."
-						className="pl-9 bg-slate-50 border-slate-200 h-10 rounded-lg text-sm focus-visible:ring-1 focus-visible:ring-blue-500 transition-shadow w-full"
-					/>
+					<form onSubmit={handleSearch}>
+						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+						<Input
+							name="search"
+							placeholder="Search donors, coordinators..."
+							defaultValue={searchParams.get("query") || ""}
+							className="pl-9 bg-slate-50 border-slate-200 h-10 rounded-lg text-sm focus-visible:ring-1 focus-visible:ring-blue-500 transition-shadow w-full"
+						/>
+					</form>
 				</div>
 			</div>
 			<div className="flex items-center gap-6">

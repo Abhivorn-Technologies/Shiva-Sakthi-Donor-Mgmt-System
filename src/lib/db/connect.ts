@@ -1,17 +1,16 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-	throw new Error(
-		"Please define the MONGODB_URI environment variable inside .env",
-	);
+declare global {
+	var mongooseCache: {
+		conn: typeof mongoose | null;
+		promise: Promise<typeof mongoose> | null;
+	};
 }
 
-let cached = (global as any).mongoose;
+let cached = global.mongooseCache;
 
 if (!cached) {
-	cached = (global as any).mongoose = { conn: null, promise: null };
+	cached = global.mongooseCache = { conn: null, promise: null };
 }
 
 async function connectToDatabase() {
@@ -19,12 +18,21 @@ async function connectToDatabase() {
 		return cached.conn;
 	}
 
+	const MONGODB_URI = process.env.MONGODB_URI;
+
+	if (!MONGODB_URI) {
+		throw new Error(
+			"Please define the MONGODB_URI environment variable inside .env",
+		);
+	}
+
 	if (!cached.promise) {
 		const opts = {
 			bufferCommands: false,
+			maxPoolSize: 10,
 		};
 
-		cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+		cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
 			return mongoose;
 		});
 	}

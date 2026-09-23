@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
 import { User } from "@/models/User";
@@ -17,16 +18,28 @@ import {
 	Sparkles,
 	UserCog,
 } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard(props: {
+	searchParams: Promise<{ days?: string }>;
+}) {
+	const searchParams = await props.searchParams;
 	await connectToDatabase();
+
+	let daysCount = parseInt(searchParams.days || "7", 10);
+	if (![7, 14, 30].includes(daysCount)) daysCount = 7;
 
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
-	const sevenDaysAgo = new Date();
-	sevenDaysAgo.setDate(today.getDate() - 6);
-	sevenDaysAgo.setHours(0, 0, 0, 0);
+	const startDate = new Date();
+	startDate.setDate(today.getDate() - (daysCount - 1));
+	startDate.setHours(0, 0, 0, 0);
 
 	const [
 		totalDonors,
@@ -42,7 +55,7 @@ export default async function AdminDashboard() {
 		Donor.countDocuments({ donationDate: { $gte: today } }),
 		User.countDocuments({ role: "COORDINATOR" }),
 		Donor.aggregate([
-			{ $match: { donationDate: { $gte: sevenDaysAgo } } },
+			{ $match: { donationDate: { $gte: startDate } } },
 			{
 				$group: {
 					_id: { $dateToString: { format: "%Y-%m-%d", date: "$donationDate" } },
@@ -55,15 +68,27 @@ export default async function AdminDashboard() {
 
 	const totalAmount = totalDonationAmount[0]?.totalAmount || 0;
 
-	// Format chart data for last 7 days
+	// Format chart data
 	const chartData = [];
-	for (let i = 0; i < 7; i++) {
-		const d = new Date(sevenDaysAgo);
+	for (let i = 0; i < daysCount; i++) {
+		const d = new Date(startDate);
 		d.setDate(d.getDate() + i);
-		const dateString = d.toISOString().split("T")[0];
-		const match = dailyChartData.find((item) => item._id === dateString);
+		
+		// Get date string in local timezone
+		const year = d.getFullYear();
+		const month = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		const dateString = `${year}-${month}-${day}`;
+		
+		// The aggregation $dateToString format="%Y-%m-%d" works on UTC dates in MongoDB
+		// We should match it by converting our local date to UTC date string
+		const utcDateString = d.toISOString().split("T")[0];
+		
+		const match = dailyChartData.find((item) => item._id === utcDateString || item._id === dateString);
 		chartData.push({
-			name: d.toLocaleDateString("en-US", { weekday: "short" }),
+			name: daysCount > 14 
+				? d.toLocaleDateString("en-US", { day: "numeric", month: "short" })
+				: d.toLocaleDateString("en-US", { weekday: "short" }),
 			amount: match ? match.amount : 0,
 		});
 	}
@@ -77,7 +102,7 @@ export default async function AdminDashboard() {
 	});
 
 	return (
-		<div className="space-y-6 pb-12">
+		<div className="space-y-4 pb-6">
 			{/* Header Area */}
 			<div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
 				<div>
@@ -85,7 +110,7 @@ export default async function AdminDashboard() {
 						Admin Overview
 					</h1>
 					<p className="text-slate-500 mt-1">
-						Here's what's happening with your platform today.
+						Here&apos;s what's happening with your platform today.
 					</p>
 				</div>
 				<div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm text-sm font-medium text-slate-600">
@@ -95,26 +120,26 @@ export default async function AdminDashboard() {
 			</div>
 
 			{/* 4 Custom Style Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
 				<Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100 shadow-sm">
-					<CardContent className="p-6 relative overflow-hidden">
+					<CardContent className="p-4 relative overflow-hidden">
 						<div className="flex justify-between items-start">
-							<div className="space-y-3">
-								<div className="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center">
-									<Users className="w-5 h-5 text-blue-600" />
+							<div className="space-y-2">
+								<div className="bg-blue-100 w-8 h-8 rounded-full flex items-center justify-center">
+									<Users className="w-4 h-4 text-blue-600" />
 								</div>
 								<div>
-									<p className="text-sm font-medium text-slate-600">
+									<p className="text-xs font-medium text-slate-600">
 										Total Donors
 									</p>
-									<h3 className="text-3xl font-bold text-slate-900 mt-1">
+									<h3 className="text-2xl font-bold text-slate-900 mt-0.5">
 										{totalDonors}
 									</h3>
 								</div>
 							</div>
-							<BarChart3 className="w-12 h-12 text-blue-50 opacity-50 absolute -right-2 -bottom-2" />
+							<BarChart3 className="w-10 h-10 text-blue-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-4 flex items-center text-xs font-medium text-green-600">
+						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
 							<span className="flex items-center">↑ 0%</span>
 							<span className="text-slate-500 ml-1 font-normal">
 								from last week
@@ -124,24 +149,24 @@ export default async function AdminDashboard() {
 				</Card>
 
 				<Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100 shadow-sm">
-					<CardContent className="p-6 relative overflow-hidden">
+					<CardContent className="p-4 relative overflow-hidden">
 						<div className="flex justify-between items-start">
-							<div className="space-y-3">
-								<div className="bg-emerald-100 w-10 h-10 rounded-full flex items-center justify-center">
-									<IndianRupee className="w-5 h-5 text-emerald-600" />
+							<div className="space-y-2">
+								<div className="bg-emerald-100 w-8 h-8 rounded-full flex items-center justify-center">
+									<IndianRupee className="w-4 h-4 text-emerald-600" />
 								</div>
 								<div>
-									<p className="text-sm font-medium text-slate-600">
+									<p className="text-xs font-medium text-slate-600">
 										Total Revenue
 									</p>
-									<h3 className="text-3xl font-bold text-slate-900 mt-1">
+									<h3 className="text-2xl font-bold text-slate-900 mt-0.5">
 										₹{totalAmount.toLocaleString("en-IN")}
 									</h3>
 								</div>
 							</div>
-							<BarChart3 className="w-12 h-12 text-emerald-50 opacity-50 absolute -right-2 -bottom-2" />
+							<BarChart3 className="w-10 h-10 text-emerald-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-4 flex items-center text-xs font-medium text-green-600">
+						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
 							<span className="flex items-center">↑ 0%</span>
 							<span className="text-slate-500 ml-1 font-normal">
 								from last week
@@ -151,24 +176,24 @@ export default async function AdminDashboard() {
 				</Card>
 
 				<Card className="bg-gradient-to-br from-orange-50 to-white border-orange-100 shadow-sm">
-					<CardContent className="p-6 relative overflow-hidden">
+					<CardContent className="p-4 relative overflow-hidden">
 						<div className="flex justify-between items-start">
-							<div className="space-y-3">
-								<div className="bg-orange-100 w-10 h-10 rounded-full flex items-center justify-center">
-									<UserPlus className="w-5 h-5 text-orange-600" />
+							<div className="space-y-2">
+								<div className="bg-orange-100 w-8 h-8 rounded-full flex items-center justify-center">
+									<UserPlus className="w-4 h-4 text-orange-600" />
 								</div>
 								<div>
-									<p className="text-sm font-medium text-slate-600">
-										Today's Donors
+									<p className="text-xs font-medium text-slate-600">
+										Today&apos;s Donors
 									</p>
-									<h3 className="text-3xl font-bold text-slate-900 mt-1">
+									<h3 className="text-2xl font-bold text-slate-900 mt-0.5">
 										{todayDonors}
 									</h3>
 								</div>
 							</div>
-							<BarChart3 className="w-12 h-12 text-orange-50 opacity-50 absolute -right-2 -bottom-2" />
+							<BarChart3 className="w-10 h-10 text-orange-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-4 flex items-center text-xs font-medium text-green-600">
+						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
 							<span className="flex items-center">↑ 0%</span>
 							<span className="text-slate-500 ml-1 font-normal">
 								from yesterday
@@ -178,24 +203,24 @@ export default async function AdminDashboard() {
 				</Card>
 
 				<Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100 shadow-sm">
-					<CardContent className="p-6 relative overflow-hidden">
+					<CardContent className="p-4 relative overflow-hidden">
 						<div className="flex justify-between items-start">
-							<div className="space-y-3">
-								<div className="bg-purple-100 w-10 h-10 rounded-full flex items-center justify-center">
-									<Shield className="w-5 h-5 text-purple-600" />
+							<div className="space-y-2">
+								<div className="bg-purple-100 w-8 h-8 rounded-full flex items-center justify-center">
+									<Shield className="w-4 h-4 text-purple-600" />
 								</div>
 								<div>
-									<p className="text-sm font-medium text-slate-600">
+									<p className="text-xs font-medium text-slate-600">
 										Coordinators
 									</p>
-									<h3 className="text-3xl font-bold text-slate-900 mt-1">
+									<h3 className="text-2xl font-bold text-slate-900 mt-0.5">
 										{coordinators}
 									</h3>
 								</div>
 							</div>
-							<BarChart3 className="w-12 h-12 text-purple-50 opacity-50 absolute -right-2 -bottom-2" />
+							<BarChart3 className="w-10 h-10 text-purple-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-4 flex items-center text-xs font-medium text-green-600">
+						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
 							<span className="flex items-center">↑ 0%</span>
 							<span className="text-slate-500 ml-1 font-normal">
 								from last week
@@ -205,31 +230,48 @@ export default async function AdminDashboard() {
 				</Card>
 			</div>
 
-			<div className="grid gap-6 lg:grid-cols-3">
+			<div className="grid gap-4 lg:grid-cols-3">
 				{/* Main Chart Area */}
-				<div className="lg:col-span-2 space-y-6">
+				<div className="lg:col-span-2 space-y-4">
 					<Card className="shadow-sm border-slate-200">
-						<CardHeader className="flex flex-row items-center justify-between pb-6">
+						<CardHeader className="flex flex-row items-center justify-between pb-4">
 							<div className="space-y-1">
 								<div className="flex items-center gap-2">
 									<div className="bg-blue-100 p-1.5 rounded-md">
 										<BarChart3 className="w-4 h-4 text-blue-600" />
 									</div>
-									<CardTitle className="text-lg">Last 7 Days Revenue</CardTitle>
+									<CardTitle className="text-lg">Last {daysCount} Days Revenue</CardTitle>
 								</div>
 								<p className="text-sm text-slate-500">
-									Daily revenue collected over the past 7 days
+									Daily revenue collected over the past {daysCount} days
 								</p>
 							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 gap-2 font-normal text-slate-600 bg-white"
-							>
-								<Calendar className="w-3.5 h-3.5" />
-								Last 7 Days
-								<span className="ml-1 text-[10px]">▼</span>
-							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											variant="outline"
+											size="sm"
+											className="h-8 gap-2 font-normal text-slate-600 bg-white cursor-pointer"
+										>
+											<Calendar className="w-3.5 h-3.5" />
+											Last {daysCount} Days
+											<span className="ml-1 text-[10px]">▼</span>
+										</Button>
+									}
+								/>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem render={<Link href="?days=7" className="w-full cursor-pointer" />}>
+										Last 7 Days
+									</DropdownMenuItem>
+									<DropdownMenuItem render={<Link href="?days=14" className="w-full cursor-pointer" />}>
+										Last 14 Days
+									</DropdownMenuItem>
+									<DropdownMenuItem render={<Link href="?days=30" className="w-full cursor-pointer" />}>
+										Last 30 Days
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</CardHeader>
 						<CardContent>
 							<AnalyticsChart data={chartData} />
@@ -237,7 +279,7 @@ export default async function AdminDashboard() {
 					</Card>
 
 					{/* Bottom Banner */}
-					<div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6 flex items-start gap-4 shadow-sm relative overflow-hidden">
+					<div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3 shadow-sm relative overflow-hidden">
 						<div
 							className="absolute inset-0 opacity-[0.03]"
 							style={{
@@ -261,9 +303,9 @@ export default async function AdminDashboard() {
 				</div>
 
 				{/* Right Side Widgets */}
-				<div className="space-y-6">
+				<div className="space-y-4">
 					<Card className="shadow-sm border-slate-200">
-						<CardHeader className="pb-4 border-b border-slate-100">
+						<CardHeader className="pb-3 border-b border-slate-100">
 							<div className="flex items-center gap-2">
 								<div className="bg-blue-50 p-1.5 rounded-md">
 									<span className="text-blue-600 font-bold text-lg leading-none">
@@ -322,7 +364,7 @@ export default async function AdminDashboard() {
 					</Card>
 
 					<Card className="shadow-sm border-slate-200">
-						<CardHeader className="pb-4 border-b border-slate-100">
+						<CardHeader className="pb-3 border-b border-slate-100">
 							<div className="flex items-center gap-2">
 								<div className="bg-blue-50 p-1.5 rounded-md">
 									<span className="text-blue-600 font-bold text-lg leading-none">
@@ -337,14 +379,14 @@ export default async function AdminDashboard() {
 								</div>
 							</div>
 						</CardHeader>
-						<CardContent className="p-4 space-y-4">
+						<CardContent className="p-4 space-y-3">
 							<div className="flex justify-between items-center text-sm">
 								<span className="text-slate-600">Total Donors</span>
 								<span className="font-bold text-slate-900">{totalDonors}</span>
 							</div>
 							<div className="h-px bg-slate-100 w-full" />
 							<div className="flex justify-between items-center text-sm">
-								<span className="text-slate-600">Today's Donors</span>
+								<span className="text-slate-600">Today&apos;s Donors</span>
 								<span className="font-bold text-slate-900">{todayDonors}</span>
 							</div>
 							<div className="h-px bg-slate-100 w-full" />

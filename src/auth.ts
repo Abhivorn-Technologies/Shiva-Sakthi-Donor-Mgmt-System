@@ -13,20 +13,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 				password: { label: "Password", type: "password" },
 			},
 			async authorize(credentials) {
-				console.log("AUTHORIZE CALL:", credentials);
 				if (!credentials?.email || !credentials?.password) {
-					console.log("Missing credentials");
 					return null;
 				}
 
 				await connectToDatabase();
 				const user = await User.findOne({
-					email: credentials.email.toString().toLowerCase(),
+					email: credentials.email.toString().trim().toLowerCase(),
 				});
-				console.log("DB USER FOUND:", user ? user.email : "none");
 
 				if (!user || !user.isActive) {
-					console.log("User not found or inactive.");
 					return null;
 				}
 
@@ -34,10 +30,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 					credentials.password.toString(),
 					user.passwordHash,
 				);
-				console.log("PASSWORDS MATCH:", passwordsMatch);
 
 				if (passwordsMatch) {
-					console.log("LOGIN SUCCESS");
 					return {
 						id: user._id.toString(),
 						email: user.email,
@@ -55,6 +49,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 			if (user) {
 				token.role = user.role;
 				token.id = user.id;
+			}
+			if (token.id) {
+				await connectToDatabase();
+				const dbUser = await User.findById(token.id);
+				if (!dbUser || !dbUser.isActive) {
+					// Invalidate token by removing role or throwing error? Let's clear role to force logout
+					token.role = null;
+				} else {
+					token.role = dbUser.role;
+				}
 			}
 			return token;
 		},

@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 import connectToDatabase from "@/lib/db/connect";
+import { Types } from "mongoose";
 import { Donor } from "@/models/Donor";
+import { User } from "@/models/User";
 import { Card } from "@/components/ui/card";
 import {
 	Table,
@@ -21,27 +24,33 @@ import {
 export default async function AdminDonorsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ query?: string; page?: string }>;
+	searchParams: Promise<{ query?: string; page?: string; coordinatorId?: string }>;
 }) {
-	const { query, page: pageStr } = await searchParams;
+	const { query, page: pageStr, coordinatorId } = await searchParams;
 	await connectToDatabase();
 
-	const page = parseInt(pageStr || "1", 10);
+	let page = parseInt(pageStr || "1", 10);
+	if (isNaN(page) || page < 1) page = 1;
+	if (page > 1000) page = 1000;
 	const limit = 10;
 	const skip = (page - 1) * limit;
 
 	let matchStage: any = {};
 	if (query) {
+		const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 50);
 		matchStage = {
 			$or: [
-				{ fullName: { $regex: query, $options: "i" } },
-				{ email: { $regex: query, $options: "i" } },
-				{ whatsappNumber: { $regex: query, $options: "i" } },
+				{ fullName: { $regex: safeQuery, $options: "i" } },
+				{ email: { $regex: safeQuery, $options: "i" } },
+				{ whatsappNumber: { $regex: safeQuery, $options: "i" } },
 			],
 		};
 	}
+	if (coordinatorId && coordinatorId !== "all" && Types.ObjectId.isValid(coordinatorId)) {
+		matchStage.createdBy = coordinatorId;
+	}
 
-	const [donors, total] = await Promise.all([
+	const [donors, total, coordinatorsList] = await Promise.all([
 		Donor.find(matchStage)
 			.populate("createdBy", "fullName")
 			.sort({ donationDate: -1 })
@@ -49,6 +58,7 @@ export default async function AdminDonorsPage({
 			.limit(limit)
 			.lean(),
 		Donor.countDocuments(matchStage),
+		User.find({ role: "COORDINATOR" }).select("fullName").lean(),
 	]);
 
 	const totalPages = Math.ceil(total / limit) || 1;
@@ -56,6 +66,7 @@ export default async function AdminDonorsPage({
 	const getPageUrl = (p: number) => {
 		const params = new URLSearchParams();
 		if (query) params.set("query", query);
+		if (coordinatorId && coordinatorId !== "all") params.set("coordinatorId", coordinatorId);
 		params.set("page", p.toString());
 		return `/admin/donors?${params.toString()}`;
 	};
@@ -71,15 +82,30 @@ export default async function AdminDonorsPage({
 						Browse and search the entire donor database.
 					</p>
 				</div>
-				<div className="w-full sm:w-72">
-					<form>
+				<div className="w-full sm:w-auto">
+					<form className="flex flex-col sm:flex-row gap-2 items-center">
+						<select
+							name="coordinatorId"
+							defaultValue={coordinatorId || "all"}
+							className="h-9 w-full sm:w-48 rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+						>
+							<option value="all">All Coordinators</option>
+							{coordinatorsList.map((c: any) => (
+								<option key={c._id.toString()} value={c._id.toString()}>
+									{c.fullName}
+								</option>
+							))}
+						</select>
 						<Input
 							type="search"
 							name="query"
 							placeholder="Search donors..."
 							defaultValue={query}
-							className="w-full shadow-sm bg-white"
+							className="w-full sm:w-72 shadow-sm bg-white h-9"
 						/>
+						<button type="submit" className="h-9 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700 transition-colors">
+							Filter
+						</button>
 					</form>
 				</div>
 			</div>

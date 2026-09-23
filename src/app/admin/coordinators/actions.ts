@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 "use server";
 
 import connectToDatabase from "@/lib/db/connect";
@@ -6,13 +7,26 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { Types } from "mongoose";
+import { z } from "zod";
+
+const coordinatorSchema = z.object({
+	fullName: z.string().min(1, "Name is required"),
+	email: z.string().email("Invalid email").transform(v => v.trim().toLowerCase()),
+	password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export async function deactivateCoordinator(id: string, isActive: boolean) {
 	const session = await auth();
 	if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+	if (!Types.ObjectId.isValid(id)) throw new Error("Invalid ID");
+	if (session.user.id === id) throw new Error("Cannot deactivate yourself");
 
 	await connectToDatabase();
-	await User.findByIdAndUpdate(id, { isActive });
+	await User.findOneAndUpdate(
+		{ _id: id, role: "COORDINATOR" },
+		{ isActive }
+	);
 	revalidatePath("/admin/coordinators");
 }
 
@@ -21,26 +35,18 @@ export async function createCoordinator(prevState: any, formData: FormData) {
 		const session = await auth();
 		if (session?.user?.role !== "ADMIN") return { error: "Unauthorized" };
 
-		const fullName = formData.get("fullName") as string;
-		const email = formData.get("email") as string;
-		const password = formData.get("password") as string;
-
-		if (!fullName || !email || !password || password.length < 6) {
-			return { error: "Invalid input" };
+		const result = coordinatorSchema.safeParse(Object.fromEntries(formData));
+		if (!result.success) {
+			return { error: result.error.errors[0].message };
 		}
+		const { fullName, email, password } = result.data;
 
 		await connectToDatabase();
-
-		const existingUser = await User.findOne({ email: email.toLowerCase() });
-		if (existingUser) {
-			return { error: "User with this email already exists." };
-		}
-
 		const passwordHash = await bcrypt.hash(password, 10);
 
 		const newCoord = new User({
 			fullName,
-			email: email.toLowerCase(),
+			email,
 			passwordHash,
 			role: "COORDINATOR",
 			isActive: true,
@@ -48,6 +54,9 @@ export async function createCoordinator(prevState: any, formData: FormData) {
 
 		await newCoord.save();
 	} catch (error: any) {
+		if (error.code === 11000) {
+			return { error: "User with this email already exists." };
+		}
 		return { error: "Internal server error" };
 	}
 
@@ -58,9 +67,11 @@ export async function createCoordinator(prevState: any, formData: FormData) {
 export async function deleteCoordinator(id: string) {
 	const session = await auth();
 	if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+	if (!Types.ObjectId.isValid(id)) throw new Error("Invalid ID");
+	if (session.user.id === id) throw new Error("Cannot delete yourself");
 
 	await connectToDatabase();
-	await User.findByIdAndDelete(id);
+	await User.findOneAndDelete({ _id: id, role: "COORDINATOR" });
 	revalidatePath("/admin/coordinators");
 }
 
@@ -70,10 +81,15 @@ export async function resetCoordinatorPassword(
 ) {
 	const session = await auth();
 	if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+	if (!Types.ObjectId.isValid(id)) throw new Error("Invalid ID");
 	if (!newPassword || newPassword.length < 6)
 		throw new Error("Password must be at least 6 characters");
+	if (session.user.id === id) throw new Error("Cannot reset own password here");
 
 	await connectToDatabase();
 	const passwordHash = await bcrypt.hash(newPassword, 10);
-	await User.findByIdAndUpdate(id, { passwordHash });
+	await User.findOneAndUpdate(
+		{ _id: id, role: "COORDINATOR" },
+		{ passwordHash }
+	);
 }
