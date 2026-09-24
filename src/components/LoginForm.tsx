@@ -65,6 +65,7 @@ export function LoginForm() {
 								type="email"
 								placeholder="Enter your email address"
 								required
+								autoComplete="email"
 								className="pl-11 h-12 rounded-xl border-slate-200 focus-visible:ring-blue-500 focus-visible:border-blue-500 bg-slate-50/50"
 							/>
 						</div>
@@ -87,6 +88,7 @@ export function LoginForm() {
 								type={showPassword ? "text" : "password"}
 								placeholder="Enter your password"
 								required
+								autoComplete="current-password"
 								className="pl-11 pr-11 h-12 rounded-xl border-slate-200 focus-visible:ring-blue-500 focus-visible:border-blue-500 bg-slate-50/50"
 							/>
 							<button
@@ -103,28 +105,7 @@ export function LoginForm() {
 						</div>
 					</div>
 
-					<div className="flex items-center justify-between mt-2">
-						<div className="flex items-center space-x-2">
-							<input
-								type="checkbox"
-								id="remember"
-								name="remember"
-								className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-							/>
-							<Label
-								htmlFor="remember"
-								className="text-sm font-medium text-slate-700 cursor-pointer"
-							>
-								Remember me
-							</Label>
-						</div>
-						<Link
-							href="#"
-							className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline"
-						>
-							Forgot password?
-						</Link>
-					</div>
+
 
 					{state?.error && (
 						<div className="text-sm text-red-500 text-center font-medium bg-red-50 p-3 rounded-lg">
@@ -138,24 +119,7 @@ export function LoginForm() {
 				</form>
 			</CardContent>
 
-			<div className="flex flex-col space-y-6 pt-4 pb-6 mt-4">
-				<div className="relative w-full flex items-center justify-center">
-					<div className="absolute w-full border-t border-slate-200"></div>
-					<div className="relative px-4 bg-white text-sm text-slate-400 font-medium">
-						or
-					</div>
-				</div>
 
-				<div className="text-center text-sm font-medium text-slate-600">
-					New here?{" "}
-					<Link
-						href="#"
-						className="text-blue-600 hover:text-blue-500 hover:underline"
-					>
-						Contact your administrator
-					</Link>
-				</div>
-			</div>
 		</Card>
 	);
 }

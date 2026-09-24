@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 import connectToDatabase from "@/lib/db/connect";
+import { DonorsFilter } from "./DonorsFilter";
 import { Types } from "mongoose";
 import { Donor } from "@/models/Donor";
 import { User } from "@/models/User";
@@ -24,9 +25,9 @@ import {
 export default async function AdminDonorsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ query?: string; page?: string; coordinatorId?: string }>;
+	searchParams: Promise<{ query?: string; page?: string; coordinatorId?: string; fromDate?: string; toDate?: string }>;
 }) {
-	const { query, page: pageStr, coordinatorId } = await searchParams;
+	const { query, page: pageStr, coordinatorId, fromDate, toDate } = await searchParams;
 	await connectToDatabase();
 
 	let page = parseInt(pageStr || "1", 10);
@@ -47,7 +48,16 @@ export default async function AdminDonorsPage({
 		};
 	}
 	if (coordinatorId && coordinatorId !== "all" && Types.ObjectId.isValid(coordinatorId)) {
-		matchStage.createdBy = coordinatorId;
+		matchStage.createdBy = new Types.ObjectId(coordinatorId);
+	}
+	if (fromDate || toDate) {
+		matchStage.donationDate = {};
+		if (fromDate) matchStage.donationDate.$gte = new Date(fromDate);
+		if (toDate) {
+			const to = new Date(toDate);
+			to.setHours(23, 59, 59, 999);
+			matchStage.donationDate.$lte = to;
+		}
 	}
 
 	const [donors, total, coordinatorsList] = await Promise.all([
@@ -67,6 +77,8 @@ export default async function AdminDonorsPage({
 		const params = new URLSearchParams();
 		if (query) params.set("query", query);
 		if (coordinatorId && coordinatorId !== "all") params.set("coordinatorId", coordinatorId);
+		if (fromDate) params.set("fromDate", fromDate);
+		if (toDate) params.set("toDate", toDate);
 		params.set("page", p.toString());
 		return `/admin/donors?${params.toString()}`;
 	};
@@ -82,31 +94,26 @@ export default async function AdminDonorsPage({
 						Browse and search the entire donor database.
 					</p>
 				</div>
-				<div className="w-full sm:w-auto">
-					<form className="flex flex-col sm:flex-row gap-2 items-center">
-						<select
-							name="coordinatorId"
-							defaultValue={coordinatorId || "all"}
-							className="h-9 w-full sm:w-48 rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						>
-							<option value="all">All Coordinators</option>
-							{coordinatorsList.map((c: any) => (
-								<option key={c._id.toString()} value={c._id.toString()}>
-									{c.fullName}
-								</option>
-							))}
-						</select>
-						<Input
-							type="search"
-							name="query"
-							placeholder="Search donors..."
-							defaultValue={query}
-							className="w-full sm:w-72 shadow-sm bg-white h-9"
-						/>
-						<button type="submit" className="h-9 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700 transition-colors">
-							Filter
-						</button>
-					</form>
+				<div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 items-center">
+					<DonorsFilter 
+						coordinatorsList={coordinatorsList.map(c => ({ _id: c._id.toString(), fullName: c.fullName }))} 
+						defaultCoordinatorId={coordinatorId} 
+						defaultQuery={query} 
+						defaultFromDate={fromDate}
+						defaultToDate={toDate}
+					/>
+
+					<a
+						href={`/api/export/donors?${new URLSearchParams({
+							...(query ? { query } : {}),
+							...(coordinatorId && coordinatorId !== "all" ? { coordinatorId } : {}),
+							...(fromDate ? { fromDate } : {}),
+							...(toDate ? { toDate } : {}),
+						}).toString()}`}
+						className="h-9 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md shadow hover:bg-emerald-700 transition-colors flex items-center justify-center whitespace-nowrap w-full sm:w-auto"
+					>
+						Export CSV
+					</a>
 				</div>
 			</div>
 

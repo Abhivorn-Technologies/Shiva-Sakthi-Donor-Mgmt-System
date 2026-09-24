@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Clock, ArrowRight, ClipboardList, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function DonorList({ donors }: { donors: any[] }) {
 	return (
@@ -30,6 +31,8 @@ export function DonorList({ donors }: { donors: any[] }) {
 				<Button
 					variant="outline"
 					className="text-blue-600 border-slate-200 hover:bg-slate-50 rounded-full px-4 h-9 font-semibold text-xs"
+					render={<Link href="/coordinator/donors" />}
+					nativeButton={false}
 				>
 					View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
 				</Button>
@@ -56,7 +59,10 @@ export function DonorList({ donors }: { donors: any[] }) {
 						<p className="text-slate-500 text-sm mb-6 max-w-[280px]">
 							Once you add donors, they will appear here with their details.
 						</p>
-						<Button className="bg-blue-600 hover:bg-blue-700 font-semibold h-11 px-6 rounded-full">
+						<Button 
+							onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+							className="bg-blue-600 hover:bg-blue-700 font-semibold h-11 px-6 rounded-full"
+						>
 							<UserPlus className="w-4 h-4 mr-2" /> Add Your First Donor
 						</Button>
 					</div>

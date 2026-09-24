@@ -3,7 +3,7 @@ import { HeartHandshake, Users, BarChart3, Heart } from "lucide-react";
 
 export default function LoginPage() {
 	return (
-		<div className="flex flex-1 w-full h-full bg-slate-50 overflow-hidden">
+		<div className="flex flex-1 w-full h-screen bg-slate-50 overflow-hidden">
 			{/* Left side - Branding & Info */}
 			<div className="hidden lg:flex lg:w-1/2 xl:w-5/12 bg-blue-600 relative flex-col justify-between p-12 text-white overflow-hidden">
 				{/* Abstract background shapes */}

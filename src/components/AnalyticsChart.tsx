@@ -17,7 +17,7 @@ export function AnalyticsChart({ data }: { data: any[] }) {
 			<ResponsiveContainer width="100%" height="100%">
 				<LineChart
 					data={data}
-					margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+					margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
 				>
 					<CartesianGrid
 						strokeDasharray="3 3"
@@ -32,7 +32,13 @@ export function AnalyticsChart({ data }: { data: any[] }) {
 						dy={10}
 					/>
 					<YAxis
-						tickFormatter={(value) => `₹${value}`}
+						tickFormatter={(value) => {
+							if (value >= 10000000) return `₹${(value / 10000000).toFixed(1)}Cr`;
+							if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+							if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
+							return `₹${value}`;
+						}}
+						width={55}
 						axisLine={false}
 						tickLine={false}
 						tick={{ fill: "#64748b", fontSize: 12 }}
