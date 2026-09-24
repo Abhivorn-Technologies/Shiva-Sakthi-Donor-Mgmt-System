@@ -90,8 +90,8 @@ const DonorSchema: Schema = new Schema(
 );
 
 DonorSchema.index({ createdBy: 1, donationDate: -1 });
-DonorSchema.index({ normalizedEmail: 1, createdBy: 1 }, { unique: true });
-DonorSchema.index({ normalizedWhatsappNumber: 1, createdBy: 1 }, { unique: true });
+DonorSchema.index({ normalizedEmail: 1, createdBy: 1 });
+DonorSchema.index({ normalizedWhatsappNumber: 1, createdBy: 1 });
 
 // Prevent mongoose from compiling the model multiple times in Next.js development
 export const Donor: Model<IDonor> =

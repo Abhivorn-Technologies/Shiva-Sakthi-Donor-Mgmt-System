@@ -20,11 +20,13 @@ import {
 	PaginationPrevious,
 	PaginationNext,
 } from "@/components/ui/pagination";
+import { AddDonationModal } from "@/components/AddDonationModal";
+import { DonorFilters } from "@/components/DonorFilters";
 
 export default async function CoordinatorDonorsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ query?: string; page?: string }>;
+	searchParams: Promise<{ query?: string; page?: string; startDate?: string; endDate?: string }>;
 }) {
 	const session = await auth();
 	
@@ -32,7 +34,7 @@ export default async function CoordinatorDonorsPage({
 		redirect("/login");
 	}
 
-	const { query, page: pageStr } = await searchParams;
+	const { query, page: pageStr, startDate, endDate } = await searchParams;
 	await connectToDatabase();
 
 	let page = parseInt(pageStr || "1", 10);
@@ -42,6 +44,21 @@ export default async function CoordinatorDonorsPage({
 	const skip = (page - 1) * limit;
 
 	let matchStage: any = { createdBy: session.user.id };
+	
+	if (startDate || endDate) {
+		matchStage.donationDate = {};
+		if (startDate) {
+			const start = new Date(startDate);
+			start.setHours(0, 0, 0, 0);
+			matchStage.donationDate.$gte = start;
+		}
+		if (endDate) {
+			const end = new Date(endDate);
+			end.setHours(23, 59, 59, 999);
+			matchStage.donationDate.$lte = end;
+		}
+	}
+
 	if (query) {
 		const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 50);
 		matchStage = {
@@ -68,6 +85,8 @@ export default async function CoordinatorDonorsPage({
 	const getPageUrl = (p: number) => {
 		const params = new URLSearchParams();
 		if (query) params.set("query", query);
+		if (startDate) params.set("startDate", startDate);
+		if (endDate) params.set("endDate", endDate);
 		params.set("page", p.toString());
 		return `/coordinator/donors?${params.toString()}`;
 	};
@@ -83,16 +102,8 @@ export default async function CoordinatorDonorsPage({
 						Browse and search the donors you have added.
 					</p>
 				</div>
-				<div className="w-full sm:w-72">
-					<form>
-						<Input
-							type="search"
-							name="query"
-							placeholder="Search donors..."
-							defaultValue={query}
-							className="w-full shadow-sm bg-white"
-						/>
-					</form>
+				<div className="w-full sm:w-auto">
+					<DonorFilters />
 				</div>
 			</div>
 
@@ -115,6 +126,9 @@ export default async function CoordinatorDonorsPage({
 								</TableHead>
 								<TableHead className="font-semibold text-slate-700">
 									Date
+								</TableHead>
+								<TableHead className="font-semibold text-slate-700 text-right">
+									Actions
 								</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -153,6 +167,16 @@ export default async function CoordinatorDonorsPage({
 										</TableCell>
 										<TableCell className="text-sm text-slate-600 whitespace-nowrap">
 											{new Date(donor.donationDate).toLocaleDateString("en-GB")}
+										</TableCell>
+										<TableCell className="text-right whitespace-nowrap">
+											<AddDonationModal
+												donor={{
+													fullName: donor.fullName,
+													email: donor.email,
+													whatsappNumber: donor.whatsappNumber,
+													occupation: donor.occupation,
+												}}
+											/>
 										</TableCell>
 									</TableRow>
 								))

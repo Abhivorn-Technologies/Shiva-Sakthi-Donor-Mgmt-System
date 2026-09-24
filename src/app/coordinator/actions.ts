@@ -67,6 +67,7 @@ export async function createDonor(prevState: any, formData: FormData) {
 		await newDonor.save();
 
 		revalidatePath("/coordinator/dashboard");
+		revalidatePath("/coordinator/donors");
 		return { success: true, message: "Donor added successfully." };
 	} catch (error: any) {
 		if (error.code === 11000) {

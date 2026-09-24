@@ -36,7 +36,16 @@ function SubmitButton() {
 	);
 }
 
-export function AddDonorForm() {
+export function AddDonorForm({
+	defaultValues,
+}: {
+	defaultValues?: {
+		fullName: string;
+		email: string;
+		whatsappNumber: string;
+		occupation: string;
+	};
+} = {}) {
 	const [state, formAction] = useActionState(createDonor, undefined);
 	const [paymentMode, setPaymentMode] = useState<string>("");
 	const [success, setSuccess] = useState(false);
@@ -98,6 +107,7 @@ export function AddDonorForm() {
 								maxLength={100}
 								placeholder="Enter full name"
 								className="pl-10"
+								defaultValue={defaultValues?.fullName}
 							/>
 						</div>
 					</div>
@@ -115,6 +125,7 @@ export function AddDonorForm() {
 								required
 								placeholder="Enter email address"
 								className="pl-10"
+								defaultValue={defaultValues?.email}
 							/>
 						</div>
 					</div>
@@ -134,6 +145,7 @@ export function AddDonorForm() {
 								required
 								placeholder="e.g. 9876543210"
 								className="pl-10"
+								defaultValue={defaultValues?.whatsappNumber}
 							/>
 						</div>
 					</div>
@@ -153,6 +165,7 @@ export function AddDonorForm() {
 								required
 								placeholder="Enter occupation"
 								className="pl-10"
+								defaultValue={defaultValues?.occupation}
 							/>
 						</div>
 					</div>

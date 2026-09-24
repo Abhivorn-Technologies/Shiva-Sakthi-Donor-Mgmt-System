@@ -12,6 +12,7 @@ import {
 import { Clock, ArrowRight, ClipboardList, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { AddDonationModal } from "@/components/AddDonationModal";
 
 export function DonorList({ donors }: { donors: any[] }) {
 	return (
@@ -86,6 +87,9 @@ export function DonorList({ donors }: { donors: any[] }) {
 									<TableHead className="whitespace-nowrap font-semibold text-slate-600">
 										Date
 									</TableHead>
+									<TableHead className="whitespace-nowrap font-semibold text-slate-600 text-right">
+										Actions
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -122,6 +126,16 @@ export function DonorList({ donors }: { donors: any[] }) {
 													year: "numeric",
 												},
 											)}
+										</TableCell>
+										<TableCell className="text-right whitespace-nowrap">
+											<AddDonationModal
+												donor={{
+													fullName: donor.fullName,
+													email: donor.email,
+													whatsappNumber: donor.whatsappNumber,
+													occupation: donor.occupation,
+												}}
+											/>
 										</TableCell>
 									</TableRow>
 								))}
