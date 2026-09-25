@@ -92,7 +92,7 @@ export function DonorsFilter({
 				className="h-9 w-full sm:w-44 rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 			>
 				<option value="all">All Coordinators</option>
-				{coordinatorsList.map((c: any) => (
+				{coordinatorsList.map((c: { _id: { toString: () => string }; fullName: string }) => (
 					<option key={c._id.toString()} value={c._id.toString()}>
 						{c.fullName}
 					</option>

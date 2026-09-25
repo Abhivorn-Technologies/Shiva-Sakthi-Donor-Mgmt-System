@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities */
 import { auth } from "@/auth";
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
@@ -18,7 +18,13 @@ export default async function CoordinatorDashboard() {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
-	const [donors, totalStats, todayStats] = await Promise.all([
+	const yesterday = new Date(today);
+	yesterday.setDate(yesterday.getDate() - 1);
+
+	const lastMonth = new Date(today);
+	lastMonth.setDate(lastMonth.getDate() - 30);
+
+	const [donors, totalStats, todayStats, prevMonthStats, yesterdayStats] = await Promise.all([
 		Donor.find({ createdBy: userId })
 			.sort({ donationDate: -1 })
 			.limit(50)
@@ -43,12 +49,57 @@ export default async function CoordinatorDashboard() {
 				},
 			},
 		]),
+		Donor.aggregate([
+			{ $match: { createdBy: userId, donationDate: { $lt: lastMonth } } },
+			{
+				$group: {
+					_id: null,
+					totalAmount: { $sum: "$amount" },
+					count: { $sum: 1 },
+				},
+			},
+		]),
+		Donor.aggregate([
+			{ $match: { createdBy: userId, donationDate: { $gte: yesterday, $lt: today } } },
+			{
+				$group: {
+					_id: null,
+					totalAmount: { $sum: "$amount" },
+					count: { $sum: 1 },
+				},
+			},
+		]),
 	]);
 
 	const totalCount = totalStats[0]?.count || 0;
 	const totalAmount = totalStats[0]?.totalAmount || 0;
 	const todayCount = todayStats[0]?.count || 0;
 	const todayAmount = todayStats[0]?.totalAmount || 0;
+
+	const prevMonthCount = prevMonthStats[0]?.count || 0;
+	const prevMonthAmount = prevMonthStats[0]?.totalAmount || 0;
+	const yesterdayCount = yesterdayStats[0]?.count || 0;
+	const yesterdayAmount = yesterdayStats[0]?.totalAmount || 0;
+
+	const calcGrowth = (current: number, previous: number) => {
+		if (previous === 0) return current > 0 ? 100 : 0;
+		return Number((((current - previous) / previous) * 100).toFixed(1));
+	};
+
+	const donorsGrowth = calcGrowth(totalCount, prevMonthCount);
+	const amountGrowth = calcGrowth(totalAmount, prevMonthAmount);
+	const todayDonorsGrowth = calcGrowth(todayCount, yesterdayCount);
+	const todayAmountGrowth = calcGrowth(todayAmount, yesterdayAmount);
+
+	const renderTrend = (value: number, label: string) => (
+		<div className={`flex items-center text-xs font-semibold ${value >= 0 ? "text-green-600" : "text-red-600"}`}>
+			<TrendingUp className={`w-3 h-3 mr-1 ${value < 0 ? "rotate-180" : ""}`} />
+			{Math.abs(value)}%{" "}
+			<span className="text-slate-400 font-medium ml-1">{label}</span>
+		</div>
+	);
+
+
 
 	return (
 		<div className="space-y-8 max-w-7xl mx-auto">
@@ -79,13 +130,7 @@ export default async function CoordinatorDashboard() {
 						<div className="text-2xl font-black text-slate-900 mb-2">
 							{totalCount}
 						</div>
-						<div className="flex items-center text-xs font-semibold text-green-600">
-							<TrendingUp className="w-3 h-3 mr-1" />
-							0%{" "}
-							<span className="text-slate-400 font-medium ml-1">
-								from last month
-							</span>
-						</div>
+						{renderTrend(donorsGrowth, "from last month")}
 					</div>
 				</div>
 
@@ -101,13 +146,7 @@ export default async function CoordinatorDashboard() {
 						<div className="text-2xl font-black text-green-500 mb-2">
 							₹{totalAmount.toLocaleString("en-IN")}
 						</div>
-						<div className="flex items-center text-xs font-semibold text-green-600">
-							<TrendingUp className="w-3 h-3 mr-1" />
-							0%{" "}
-							<span className="text-slate-400 font-medium ml-1">
-								from last month
-							</span>
-						</div>
+						{renderTrend(amountGrowth, "from last month")}
 					</div>
 				</div>
 
@@ -123,13 +162,7 @@ export default async function CoordinatorDashboard() {
 						<div className="text-2xl font-black text-orange-600 mb-2">
 							{todayCount}
 						</div>
-						<div className="flex items-center text-xs font-semibold text-green-600">
-							<TrendingUp className="w-3 h-3 mr-1" />
-							0%{" "}
-							<span className="text-slate-400 font-medium ml-1">
-								from yesterday
-							</span>
-						</div>
+						{renderTrend(todayDonorsGrowth, "from yesterday")}
 					</div>
 				</div>
 
@@ -145,13 +178,7 @@ export default async function CoordinatorDashboard() {
 						<div className="text-2xl font-black text-purple-600 mb-2">
 							₹{todayAmount.toLocaleString("en-IN")}
 						</div>
-						<div className="flex items-center text-xs font-semibold text-green-600">
-							<TrendingUp className="w-3 h-3 mr-1" />
-							0%{" "}
-							<span className="text-slate-400 font-medium ml-1">
-								from yesterday
-							</span>
-						</div>
+						{renderTrend(todayAmountGrowth, "from yesterday")}
 					</div>
 				</div>
 			</div>

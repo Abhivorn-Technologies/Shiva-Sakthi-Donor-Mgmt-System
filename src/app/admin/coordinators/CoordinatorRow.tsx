@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -82,10 +82,10 @@ export function CoordinatorRow({ user }: { user: any }) {
 				<TableCell className="text-slate-500">
 					{user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "-"}
 				</TableCell>
-				<TableCell className="text-right font-medium">
+				<TableCell className="font-bold text-slate-900">
 					{user.totalDonors || 0}
 				</TableCell>
-				<TableCell className="text-right font-bold text-emerald-600">
+				<TableCell className="font-bold text-emerald-600">
 					₹{(user.totalRevenue || 0).toLocaleString("en-IN")}
 				</TableCell>
 				<TableCell>

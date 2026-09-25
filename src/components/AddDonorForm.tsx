@@ -22,6 +22,17 @@ import {
 	IndianRupee,
 	CreditCard,
 } from "lucide-react";
+import { ToWords } from "to-words";
+
+const toWords = new ToWords({
+	localeCode: "en-IN",
+	converterOptions: {
+		currency: true,
+		ignoreDecimal: false,
+		ignoreZeroCurrency: false,
+		doNotAddOnly: false,
+	},
+});
 
 function SubmitButton() {
 	const { pending } = useFormStatus();
@@ -49,13 +60,38 @@ export function AddDonorForm({
 	const [state, formAction] = useActionState(createDonor, undefined);
 	const [paymentMode, setPaymentMode] = useState<string>("");
 	const [success, setSuccess] = useState(false);
+	
+	const [amountStr, setAmountStr] = useState<string>("");
+	const [amountWords, setAmountWords] = useState<string>("");
 
-	if (state?.success && !success) {
-		setSuccess(true);
-		setPaymentMode("");
-	} else if (!state?.success && success) {
-		setSuccess(false);
-	}
+	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const rawValue = e.target.value.replace(/\D/g, "");
+		if (!rawValue) {
+			setAmountStr("");
+			setAmountWords("");
+			return;
+		}
+
+		const num = parseInt(rawValue, 10);
+		setAmountStr(num.toLocaleString("en-IN"));
+		try {
+			setAmountWords(toWords.convert(num));
+		} catch {
+			setAmountWords("");
+		}
+	};
+
+	useEffect(() => {
+		if (state?.success) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setSuccess(true);
+			setPaymentMode("");
+			setAmountStr("");
+			setAmountWords("");
+		} else if (state && !state.success) {
+			setSuccess(false);
+		}
+	}, [state]);
 
 	if (success) {
 		return (
@@ -142,10 +178,18 @@ export function AddDonorForm({
 							<Input
 								id="whatsappNumber"
 								name="whatsappNumber"
+								type="tel"
 								required
+								pattern="[0-9]{10}"
+								maxLength={10}
+								minLength={10}
+								title="Phone number must be exactly 10 digits"
 								placeholder="e.g. 9876543210"
 								className="pl-10"
 								defaultValue={defaultValues?.whatsappNumber}
+								onInput={(e) => {
+									e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 10);
+								}}
 							/>
 						</div>
 					</div>
@@ -171,21 +215,27 @@ export function AddDonorForm({
 					</div>
 
 					<div className="space-y-2">
-						<Label htmlFor="amount" className="font-semibold text-slate-700">
+						<Label htmlFor="amount_display" className="font-semibold text-slate-700">
 							Amount (₹) <span className="text-red-500">*</span>
 						</Label>
 						<div className="relative">
 							<IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<input type="hidden" name="amount" value={amountStr.replace(/,/g, "")} />
 							<Input
-								id="amount"
-								name="amount"
-								type="number"
-								min="1"
+								id="amount_display"
+								type="text"
 								required
+								value={amountStr}
+								onChange={handleAmountChange}
 								placeholder="Enter donation amount"
-								className="pl-10"
+								className="pl-10 font-medium"
 							/>
 						</div>
+						{amountWords && (
+							<p className="text-xs text-emerald-600 font-semibold px-1 mt-1">
+								{amountWords}
+							</p>
+						)}
 					</div>
 
 					<div className="space-y-2">

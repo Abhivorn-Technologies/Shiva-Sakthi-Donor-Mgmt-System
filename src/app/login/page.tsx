@@ -34,7 +34,7 @@ export default function LoginPage() {
 					<div className="flex flex-col items-center self-start">
 						<HeartHandshake className="w-12 h-12 text-blue-300 mb-2" />
 						<span className="text-2xl font-bold tracking-tight">
-							Donor Mgmt
+							Donor Management
 						</span>
 						<span className="text-xs text-blue-200">People Make Change</span>
 					</div>
@@ -112,6 +112,19 @@ export default function LoginPage() {
 				<div className="absolute bottom-10 left-10 w-32 h-32 bg-indigo-100 rounded-full blur-2xl opacity-60"></div>
 
 				<div className="w-full max-w-md relative z-10">
+					{/* Mobile Branding (only visible on small screens) */}
+					<div className="lg:hidden flex flex-col items-center mb-8">
+						<div className="bg-blue-100 p-3 rounded-full mb-4">
+							<HeartHandshake className="w-10 h-10 text-blue-600" />
+						</div>
+						<h1 className="text-3xl font-bold tracking-tight text-slate-900 text-center">
+							Donor Management
+						</h1>
+						<p className="text-sm font-medium text-slate-500 mt-1 text-center">
+							People Make Change
+						</p>
+					</div>
+
 					<LoginForm />
 				</div>
 			</div>

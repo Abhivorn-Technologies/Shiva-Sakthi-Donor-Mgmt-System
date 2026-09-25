@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities */
 
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
@@ -37,6 +37,12 @@ export default async function AdminDashboard(props: {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
+	const yesterday = new Date(today);
+	yesterday.setDate(yesterday.getDate() - 1);
+
+	const sevenDaysAgo = new Date(today);
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
 	const startDate = new Date();
 	startDate.setDate(today.getDate() - (daysCount - 1));
 	startDate.setHours(0, 0, 0, 0);
@@ -47,6 +53,10 @@ export default async function AdminDashboard(props: {
 		todayDonors,
 		coordinators,
 		dailyChartData,
+		prevWeekDonors,
+		prevWeekAmountAggr,
+		yesterdayDonors,
+		prevWeekCoordinators,
 	] = await Promise.all([
 		Donor.countDocuments(),
 		Donor.aggregate([
@@ -64,9 +74,36 @@ export default async function AdminDashboard(props: {
 			},
 			{ $sort: { _id: 1 } },
 		]),
+		Donor.countDocuments({ donationDate: { $lt: sevenDaysAgo } }),
+		Donor.aggregate([
+			{ $match: { donationDate: { $lt: sevenDaysAgo } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
+		Donor.countDocuments({ donationDate: { $gte: yesterday, $lt: today } }),
+		User.countDocuments({ role: "COORDINATOR", createdAt: { $lt: sevenDaysAgo } }),
 	]);
 
 	const totalAmount = totalDonationAmount[0]?.totalAmount || 0;
+	const prevWeekAmount = prevWeekAmountAggr[0]?.totalAmount || 0;
+
+	const calcGrowth = (current: number, previous: number) => {
+		if (previous === 0) return current > 0 ? 100 : 0;
+		return Number((((current - previous) / previous) * 100).toFixed(1));
+	};
+
+	const donorsGrowth = calcGrowth(totalDonors, prevWeekDonors);
+	const revenueGrowth = calcGrowth(totalAmount, prevWeekAmount);
+	const todayDonorsGrowth = calcGrowth(todayDonors, yesterdayDonors);
+	const coordinatorsGrowth = calcGrowth(coordinators, prevWeekCoordinators);
+
+	const renderTrend = (value: number, label: string) => (
+		<div className={`mt-2 flex items-center text-[10px] font-medium ${value >= 0 ? "text-green-600" : "text-red-600"}`}>
+			<span className="flex items-center">
+				{value >= 0 ? "↑" : "↓"} {Math.abs(value)}%
+			</span>
+			<span className="text-slate-500 ml-1 font-normal">{label}</span>
+		</div>
+	);
 
 	// Format chart data
 	const chartData = [];
@@ -139,12 +176,7 @@ export default async function AdminDashboard(props: {
 							</div>
 							<BarChart3 className="w-10 h-10 text-blue-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
-							<span className="flex items-center">↑ 0%</span>
-							<span className="text-slate-500 ml-1 font-normal">
-								from last week
-							</span>
-						</div>
+						{renderTrend(donorsGrowth, "from last week")}
 					</CardContent>
 				</Card>
 
@@ -166,12 +198,7 @@ export default async function AdminDashboard(props: {
 							</div>
 							<BarChart3 className="w-10 h-10 text-emerald-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
-							<span className="flex items-center">↑ 0%</span>
-							<span className="text-slate-500 ml-1 font-normal">
-								from last week
-							</span>
-						</div>
+						{renderTrend(revenueGrowth, "from last week")}
 					</CardContent>
 				</Card>
 
@@ -193,12 +220,7 @@ export default async function AdminDashboard(props: {
 							</div>
 							<BarChart3 className="w-10 h-10 text-orange-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
-							<span className="flex items-center">↑ 0%</span>
-							<span className="text-slate-500 ml-1 font-normal">
-								from yesterday
-							</span>
-						</div>
+						{renderTrend(todayDonorsGrowth, "from yesterday")}
 					</CardContent>
 				</Card>
 
@@ -220,12 +242,7 @@ export default async function AdminDashboard(props: {
 							</div>
 							<BarChart3 className="w-10 h-10 text-purple-50 opacity-50 absolute -right-2 -bottom-2" />
 						</div>
-						<div className="mt-2 flex items-center text-[10px] font-medium text-green-600">
-							<span className="flex items-center">↑ 0%</span>
-							<span className="text-slate-500 ml-1 font-normal">
-								from last week
-							</span>
-						</div>
+						{renderTrend(coordinatorsGrowth, "from last week")}
 					</CardContent>
 				</Card>
 			</div>

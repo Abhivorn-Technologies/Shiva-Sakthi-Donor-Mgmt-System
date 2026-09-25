@@ -18,6 +18,7 @@ export function CoordinatorSidebar({
 
 	useEffect(() => {
 		const saved = localStorage.getItem("coordSidebarCollapsed");
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		if (saved === "true") setIsCollapsed(true);
 		setIsMounted(true);
 	}, []);
@@ -59,7 +60,7 @@ export function CoordinatorSidebar({
 					{(!isMounted || !isCollapsed) && (
 						<div className="overflow-hidden transition-all">
 							<div className="font-bold text-lg tracking-tight text-slate-900 leading-tight whitespace-nowrap">
-								Donor Mgmt
+								Donor Management
 							</div>
 							<div className="text-xs text-slate-500 font-medium whitespace-nowrap">
 								People Make Change

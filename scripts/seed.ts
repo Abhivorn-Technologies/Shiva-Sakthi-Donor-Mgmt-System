@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { config } from "dotenv";

@@ -17,7 +17,13 @@ export default async function CoordinatorLayout({
 	return (
 		<div className="min-h-screen flex flex-col md:flex-row bg-[#F8F9FB]">
 			{/* Mobile Header */}
-			<CoordinatorHeader userName={session?.user?.name || ""} />
+			<CoordinatorHeader 
+				userName={session?.user?.name || ""} 
+				onLogout={async () => {
+					"use server";
+					await signOut({ redirectTo: "/login" });
+				}}
+			/>
 
 			<CoordinatorSidebar
 				userName={session?.user?.name || ""}

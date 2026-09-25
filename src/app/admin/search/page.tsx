@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import connectToDatabase from "@/lib/db/connect";
 import { Donor } from "@/models/Donor";
 import { User } from "@/models/User";

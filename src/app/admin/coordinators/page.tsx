@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import connectToDatabase from "@/lib/db/connect";
 import { User } from "@/models/User";
 import { Card } from "@/components/ui/card";
@@ -125,10 +125,10 @@ export default async function AdminCoordinatorsPage(props: {
 								<TableHead className="font-semibold text-slate-700">
 									Joined
 								</TableHead>
-								<TableHead className="font-semibold text-slate-700 text-right">
+								<TableHead className="font-semibold text-slate-700">
 									Total Donors
 								</TableHead>
-								<TableHead className="font-semibold text-slate-700 text-right">
+								<TableHead className="font-semibold text-slate-700">
 									Revenue
 								</TableHead>
 								<TableHead className="w-[100px]"></TableHead>

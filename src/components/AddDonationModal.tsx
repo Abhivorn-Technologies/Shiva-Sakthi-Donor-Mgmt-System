@@ -13,7 +13,7 @@ import {
 import { AddDonorForm } from "@/components/AddDonorForm";
 import { PlusCircle } from "lucide-react";
 
-export function AddDonationModal({ donor }: { donor: any }) {
+export function AddDonationModal({ donor }: { donor: { fullName: string; email: string; whatsappNumber: string; occupation: string; } }) {
 	const [open, setOpen] = useState(false);
 
 	return (

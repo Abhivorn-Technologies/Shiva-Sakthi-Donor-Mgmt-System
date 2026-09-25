@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import Link from "next/link";
@@ -25,6 +25,7 @@ export function AdminSidebar({
 
 	useEffect(() => {
 		const saved = localStorage.getItem("adminSidebarCollapsed");
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		if (saved === "true") setIsCollapsed(true);
 		setIsMounted(true);
 	}, []);
