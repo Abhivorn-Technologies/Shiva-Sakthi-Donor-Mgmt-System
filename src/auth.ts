@@ -50,16 +50,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 				token.role = user.role;
 				token.id = user.id;
 			}
-			if (token.id) {
-				await connectToDatabase();
-				const dbUser = await User.findById(token.id);
-				if (!dbUser || !dbUser.isActive) {
-					// Invalidate token by removing role or throwing error? Let's clear role to force logout
-					token.role = null;
-				} else {
-					token.role = dbUser.role;
-				}
-			}
 			return token;
 		},
 		async session({ session, token }) {
