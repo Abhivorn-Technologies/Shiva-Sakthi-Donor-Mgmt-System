@@ -21,8 +21,19 @@ import {
 	Briefcase,
 	IndianRupee,
 	CreditCard,
+	MapPin,
+	Home,
+	Target,
+	Calendar as CalendarIcon,
+	History,
+	MessageSquare,
+	RefreshCw,
 } from "lucide-react";
 import { ToWords } from "to-words";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const toWords = new ToWords({
 	localeCode: "en-IN",
@@ -55,14 +66,22 @@ export function AddDonorForm({
 		email: string;
 		whatsappNumber: string;
 		occupation: string;
+		placeOfLiving?: string;
+		nativePlace?: string;
+		towards?: string;
+		donationType?: string;
+		followingShivashakthiSince?: string;
+		comments?: string;
 	};
 } = {}) {
 	const [state, formAction] = useActionState(createDonor, undefined);
 	const [paymentMode, setPaymentMode] = useState<string>("");
+	const [donationType, setDonationType] = useState<string>(defaultValues?.donationType || "");
 	const [success, setSuccess] = useState(false);
 	
 	const [amountStr, setAmountStr] = useState<string>("");
 	const [amountWords, setAmountWords] = useState<string>("");
+	const [donationDateVal, setDonationDateVal] = useState<Date>(new Date());
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const rawValue = e.target.value.replace(/\D/g, "");
@@ -86,6 +105,7 @@ export function AddDonorForm({
 			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setSuccess(true);
 			setPaymentMode("");
+			setDonationType("");
 			setAmountStr("");
 			setAmountWords("");
 		} else if (state && !state.success) {
@@ -128,8 +148,9 @@ export function AddDonorForm({
 				</div>
 			</div>
 			<div className="p-6">
-				<form action={formAction} className="space-y-4">
-					<div className="space-y-2">
+				<form action={formAction} className="space-y-6">
+					<div className="grid grid-cols-2 gap-3">
+						<div className="space-y-2">
 						<Label htmlFor="fullName" className="font-semibold text-slate-700">
 							Full Name <span className="text-red-500">*</span>
 						</Label>
@@ -169,9 +190,9 @@ export function AddDonorForm({
 					<div className="space-y-2">
 						<Label
 							htmlFor="whatsappNumber"
-							className="font-semibold text-slate-700"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
 						>
-							WhatsApp Number
+							WhatsApp No.
 						</Label>
 						<div className="relative">
 							<Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -190,6 +211,44 @@ export function AddDonorForm({
 								onInput={(e) => {
 									e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 10);
 								}}
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="placeOfLiving"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
+						>
+							Current City
+						</Label>
+						<div className="relative">
+							<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<Input
+								id="placeOfLiving"
+								name="placeOfLiving"
+								placeholder="Enter place of living"
+								className="pl-10"
+								defaultValue={defaultValues?.placeOfLiving}
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="nativePlace"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
+						>
+							Native City
+						</Label>
+						<div className="relative">
+							<Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<Input
+								id="nativePlace"
+								name="nativePlace"
+								placeholder="Enter native place"
+								className="pl-10"
+								defaultValue={defaultValues?.nativePlace}
 							/>
 						</div>
 					</div>
@@ -239,11 +298,45 @@ export function AddDonorForm({
 					</div>
 
 					<div className="space-y-2">
+						<Label htmlFor="donationDate" className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis">
+							Date <span className="text-red-500">*</span>
+						</Label>
+						<div className="relative">
+							<input type="hidden" name="donationDate" value={format(donationDateVal, "yyyy-MM-dd")} />
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button
+										variant={"outline"}
+										className={cn(
+											"w-full justify-start text-left font-normal pl-10 h-10 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+											!donationDateVal && "text-muted-foreground"
+										)}
+									>
+										<CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+										{donationDateVal ? format(donationDateVal, "dd/MM/yyyy") : <span>Pick a date</span>}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0">
+									<Calendar
+										mode="single"
+										selected={donationDateVal}
+										onSelect={(date) => date && setDonationDateVal(date)}
+										initialFocus
+										captionLayout="dropdown"
+										fromYear={2000}
+										toYear={2050}
+									/>
+								</PopoverContent>
+							</Popover>
+						</div>
+					</div>
+
+					<div className="space-y-2">
 						<Label
 							htmlFor="paymentMode"
-							className="font-semibold text-slate-700"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
 						>
-							Payment Mode <span className="text-red-500">*</span>
+							Pay Mode <span className="text-red-500">*</span>
 						</Label>
 						<div className="relative">
 							<CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
@@ -253,8 +346,8 @@ export function AddDonorForm({
 								onValueChange={(val) => setPaymentMode(val || "")}
 								value={paymentMode}
 							>
-								<SelectTrigger className="pl-10">
-									<SelectValue placeholder="Select payment mode" />
+								<SelectTrigger className="pl-10 [&>span]:truncate [&>span]:max-w-[70px] sm:[&>span]:max-w-full">
+									<SelectValue placeholder="Select mode" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="Cash">Cash</SelectItem>
@@ -285,6 +378,91 @@ export function AddDonorForm({
 							/>
 						</div>
 					)}
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="towards"
+							className="font-semibold text-slate-700"
+						>
+							Towards
+						</Label>
+						<div className="relative">
+							<Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<Input
+								id="towards"
+								name="towards"
+								placeholder="Purpose of donation"
+								className="pl-10"
+								defaultValue={defaultValues?.towards}
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="donationType"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
+						>
+							Frequency
+						</Label>
+						<div className="relative">
+							<RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+							<input type="hidden" name="donationType" value={donationType} />
+							<Select
+								onValueChange={(val) => setDonationType(val || "")}
+								value={donationType}
+							>
+								<SelectTrigger className="pl-10 [&>span]:truncate [&>span]:max-w-[70px] sm:[&>span]:max-w-full">
+									<SelectValue placeholder="Select type" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="Monthly">Monthly</SelectItem>
+									<SelectItem value="Quarterly">Quarterly</SelectItem>
+									<SelectItem value="Yearly">Yearly</SelectItem>
+									<SelectItem value="Occasional">Occasional</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="followingShivashakthiSince"
+							className="font-semibold text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis"
+						>
+							Following Since
+						</Label>
+						<div className="relative">
+							<History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<Input
+								id="followingShivashakthiSince"
+								name="followingShivashakthiSince"
+								placeholder="e.g. 2010"
+								className="pl-10"
+								defaultValue={defaultValues?.followingShivashakthiSince}
+							/>
+						</div>
+					</div>
+
+					<div className="space-y-2 col-span-2">
+						<Label
+							htmlFor="comments"
+							className="font-semibold text-slate-700"
+						>
+							Comments
+						</Label>
+						<div className="relative">
+							<MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+							<textarea
+								id="comments"
+								name="comments"
+								placeholder="Any additional comments..."
+								className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10"
+								defaultValue={defaultValues?.comments}
+							/>
+						</div>
+					</div>
+					</div>
 
 					{state?.error && (
 						<div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-100">

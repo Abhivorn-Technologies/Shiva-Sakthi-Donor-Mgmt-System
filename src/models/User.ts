@@ -6,6 +6,8 @@ export interface IUser extends Document {
 	passwordHash: string;
 	role: "ADMIN" | "COORDINATOR";
 	isActive: boolean;
+	phoneNumber?: string;
+	location?: string;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -36,6 +38,14 @@ const UserSchema: Schema = new Schema(
 		isActive: {
 			type: Boolean,
 			default: true,
+		},
+		phoneNumber: {
+			type: String,
+			trim: true,
+		},
+		location: {
+			type: String,
+			trim: true,
 		},
 	},
 	{

@@ -7,9 +7,15 @@ export interface IDonor extends Document {
 	whatsappNumber: string;
 	normalizedWhatsappNumber: string;
 	occupation: string;
+	placeOfLiving?: string;
+	nativePlace?: string;
 	paymentMode: string;
 	otherPaymentMode?: string;
 	amount: number;
+	towards?: string;
+	donationType?: string;
+	followingShivashakthiSince?: string;
+	comments?: string;
 	donationDate: Date;
 	createdBy: mongoose.Types.ObjectId;
 	createdAt: Date;
@@ -49,6 +55,14 @@ const DonorSchema: Schema = new Schema(
 			required: true,
 			trim: true,
 		},
+		placeOfLiving: {
+			type: String,
+			trim: true,
+		},
+		nativePlace: {
+			type: String,
+			trim: true,
+		},
 		paymentMode: {
 			type: String,
 			enum: [
@@ -73,6 +87,22 @@ const DonorSchema: Schema = new Schema(
 			type: Number,
 			required: true,
 			min: 1,
+		},
+		towards: {
+			type: String,
+			trim: true,
+		},
+		donationType: {
+			type: String,
+			enum: ["Monthly", "Quarterly", "Yearly", "Occasional"],
+		},
+		followingShivashakthiSince: {
+			type: String,
+			trim: true,
+		},
+		comments: {
+			type: String,
+			trim: true,
 		},
 		donationDate: {
 			type: Date,

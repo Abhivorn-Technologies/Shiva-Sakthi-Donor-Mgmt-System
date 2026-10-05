@@ -13,7 +13,7 @@ import {
 import { AddDonorForm } from "@/components/AddDonorForm";
 import { PlusCircle } from "lucide-react";
 
-export function AddDonationModal({ donor }: { donor: { fullName: string; email: string; whatsappNumber: string; occupation: string; } }) {
+export function AddDonationModal({ donor }: { donor: { fullName: string; email: string; whatsappNumber: string; occupation: string; placeOfLiving?: string; nativePlace?: string; towards?: string; donationType?: string; followingShivashakthiSince?: string; comments?: string; } }) {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -44,6 +44,12 @@ export function AddDonationModal({ donor }: { donor: { fullName: string; email: 
 							email: donor.email,
 							whatsappNumber: donor.whatsappNumber,
 							occupation: donor.occupation,
+							placeOfLiving: donor.placeOfLiving,
+							nativePlace: donor.nativePlace,
+							towards: donor.towards,
+							donationType: donor.donationType,
+							followingShivashakthiSince: donor.followingShivashakthiSince,
+							comments: donor.comments,
 						}}
 					/>
 				</div>

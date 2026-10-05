@@ -47,6 +47,13 @@ export default async function AdminDashboard(props: {
 	startDate.setDate(today.getDate() - (daysCount - 1));
 	startDate.setHours(0, 0, 0, 0);
 
+	const currentYearStart = new Date(today.getFullYear(), 0, 1);
+	const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
+	const lastYearEnd = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+	const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+	const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+	const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+
 	const [
 		totalDonors,
 		totalDonationAmount,
@@ -57,6 +64,11 @@ export default async function AdminDashboard(props: {
 		prevWeekAmountAggr,
 		yesterdayDonors,
 		prevWeekCoordinators,
+		currentYearAmountAggr,
+		lastYearAmountAggr,
+		thisMonthAmountAggr,
+		lastMonthAmountAggr,
+		coordinatorCollections,
 	] = await Promise.all([
 		Donor.countDocuments(),
 		Donor.aggregate([
@@ -81,10 +93,40 @@ export default async function AdminDashboard(props: {
 		]),
 		Donor.countDocuments({ donationDate: { $gte: yesterday, $lt: today } }),
 		User.countDocuments({ role: "COORDINATOR", createdAt: { $lt: sevenDaysAgo } }),
+		// New Aggregations
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: currentYearStart } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: lastYearStart, $lte: lastYearEnd } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: thisMonthStart } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: lastMonthStart, $lte: lastMonthEnd } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: thisMonthStart } } },
+			{ $group: { _id: "$createdBy", totalAmount: { $sum: "$amount" } } },
+			{ $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "coordinator" } },
+			{ $unwind: "$coordinator" },
+			{ $project: { name: "$coordinator.fullName", amount: "$totalAmount" } },
+			{ $sort: { amount: -1 } }
+		]),
 	]);
 
 	const totalAmount = totalDonationAmount[0]?.totalAmount || 0;
 	const prevWeekAmount = prevWeekAmountAggr[0]?.totalAmount || 0;
+
+	const currentYearAmount = currentYearAmountAggr[0]?.totalAmount || 0;
+	const lastYearAmount = lastYearAmountAggr[0]?.totalAmount || 0;
+	const thisMonthAmount = thisMonthAmountAggr[0]?.totalAmount || 0;
+	const lastMonthAmount = lastMonthAmountAggr[0]?.totalAmount || 0;
 
 	const calcGrowth = (current: number, previous: number) => {
 		if (previous === 0) return current > 0 ? 100 : 0;
@@ -295,27 +337,81 @@ export default async function AdminDashboard(props: {
 						</CardContent>
 					</Card>
 
-					{/* Bottom Banner */}
-					<div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3 shadow-sm relative overflow-hidden">
-						<div
-							className="absolute inset-0 opacity-[0.03]"
-							style={{
-								backgroundImage:
-									"radial-gradient(circle at 2px 2px, black 1px, transparent 0)",
-								backgroundSize: "24px 24px",
-							}}
-						></div>
-						<div className="bg-blue-600 p-2 rounded-lg shrink-0 relative z-10">
-							<Sparkles className="w-5 h-5 text-white" />
-						</div>
-						<div className="relative z-10">
-							<h4 className="font-semibold text-blue-900">
-								Small contributions make a big impact.
-							</h4>
-							<p className="text-sm text-blue-700/80 mt-1">
-								Keep managing, keep growing, keep making a difference.
-							</p>
-						</div>
+					{/* Donation History and Top Coordinators */}
+					<div className="grid gap-4 md:grid-cols-2">
+						<Card className="shadow-sm border-slate-200">
+							<CardHeader className="pb-3 border-b border-slate-100">
+								<div className="flex items-center gap-2">
+									<div className="bg-emerald-50 p-1.5 rounded-md">
+										<span className="text-emerald-600 font-bold text-lg leading-none">
+											💰
+										</span>
+									</div>
+									<div>
+										<CardTitle className="text-base">Donation History</CardTitle>
+										<p className="text-xs text-slate-500">
+											Performance across periods
+										</p>
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent className="p-4 space-y-3">
+								<div className="flex justify-between items-center text-sm">
+									<span className="text-slate-600">This Month</span>
+									<span className="font-bold text-emerald-600">₹{thisMonthAmount.toLocaleString("en-IN")}</span>
+								</div>
+								<div className="h-px bg-slate-100 w-full" />
+								<div className="flex justify-between items-center text-sm">
+									<span className="text-slate-600">Last Month</span>
+									<span className="font-bold text-slate-900">₹{lastMonthAmount.toLocaleString("en-IN")}</span>
+								</div>
+								<div className="h-px bg-slate-100 w-full" />
+								<div className="flex justify-between items-center text-sm">
+									<span className="text-slate-600">Current Year</span>
+									<span className="font-bold text-emerald-600">₹{currentYearAmount.toLocaleString("en-IN")}</span>
+								</div>
+								<div className="h-px bg-slate-100 w-full" />
+								<div className="flex justify-between items-center text-sm">
+									<span className="text-slate-600">Last Year</span>
+									<span className="font-bold text-slate-900">₹{lastYearAmount.toLocaleString("en-IN")}</span>
+								</div>
+							</CardContent>
+						</Card>
+
+						<Card className="shadow-sm border-slate-200">
+							<CardHeader className="pb-3 border-b border-slate-100">
+								<div className="flex items-center gap-2">
+									<div className="bg-indigo-50 p-1.5 rounded-md">
+										<span className="text-indigo-600 font-bold text-lg leading-none">
+											🏆
+										</span>
+									</div>
+									<div>
+										<CardTitle className="text-base">Top Coordinators</CardTitle>
+										<p className="text-xs text-slate-500">
+											Fund collection this month
+										</p>
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent className="p-4 space-y-3 max-h-64 overflow-y-auto">
+								{coordinatorCollections.length > 0 ? (
+									coordinatorCollections.map((c: any, index: number) => (
+										<div key={index}>
+											<div className="flex justify-between items-center text-sm">
+												<span className="text-slate-600 truncate mr-2" title={c.name}>{c.name}</span>
+												<span className="font-bold text-slate-900">₹{c.amount.toLocaleString("en-IN")}</span>
+											</div>
+											{index < coordinatorCollections.length - 1 && (
+												<div className="h-px bg-slate-100 w-full my-2" />
+											)}
+										</div>
+									))
+								) : (
+									<p className="text-sm text-slate-500 text-center py-2">No collections this month</p>
+								)}
+							</CardContent>
+						</Card>
 					</div>
 				</div>
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import connectToDatabase from "@/lib/db/connect";
 import { User } from "@/models/User";
+import { Donor } from "@/models/Donor";
 import { Card } from "@/components/ui/card";
 import {
 	Table,
@@ -10,9 +11,8 @@ import {
 	TableRow,
 	TableCell,
 } from "@/components/ui/table";
-import { buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
 import { CoordinatorRow } from "./CoordinatorRow";
+import { AddCoordinatorModal } from "@/components/AddCoordinatorModal";
 import {
 	Pagination,
 	PaginationContent,
@@ -20,9 +20,10 @@ import {
 	PaginationPrevious,
 	PaginationNext,
 } from "@/components/ui/pagination";
+import { CoordinatorFilters } from "./CoordinatorFilters";
 
 export default async function AdminCoordinatorsPage(props: {
-	searchParams: Promise<{ page?: string; query?: string }>;
+	searchParams: Promise<{ page?: string; query?: string; status?: string; joined?: string; sort?: string }>;
 }) {
 	const searchParams = await props.searchParams;
 	await connectToDatabase();
@@ -46,49 +47,92 @@ export default async function AdminCoordinatorsPage(props: {
 		};
 	}
 
+	const status = searchParams.status || "all";
+	if (status === "active") matchStage.isActive = true;
+	if (status === "inactive") matchStage.isActive = false;
+
+	const joined = searchParams.joined || "all";
+	if (joined !== "all") {
+		const now = new Date();
+		let fromDate = new Date();
+		if (joined === "last7") {
+			fromDate.setDate(now.getDate() - 7);
+		} else if (joined === "thismonth") {
+			fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+		} else if (joined === "thisyear") {
+			fromDate = new Date(now.getFullYear(), 0, 1);
+		}
+		matchStage.createdAt = { $gte: fromDate };
+	}
+
+	const sortParam = searchParams.sort || "newest";
+
+	let pipeline: any[] = [
+		{ $match: matchStage }
+	];
+
+	// If sorting by simple fields, paginate early to save DB work
+	if (sortParam === "newest" || sortParam === "oldest") {
+		pipeline.push({ $sort: { createdAt: sortParam === "newest" ? -1 : 1 } });
+		pipeline.push({ $skip: skip });
+		pipeline.push({ $limit: limit });
+	}
+
+	// Memory-efficient $lookup: groups donors in the DB instead of returning a massive array
+	pipeline.push(
+		{
+			$lookup: {
+				from: "donors",
+				let: { coordinatorId: "$_id" },
+				pipeline: [
+					{ $match: { $expr: { $eq: ["$createdBy", "$$coordinatorId"] } } },
+					{ $group: { _id: null, totalDonors: { $sum: 1 }, totalRevenue: { $sum: "$amount" } } }
+				],
+				as: "donorStats"
+			}
+		},
+		{
+			$addFields: {
+				totalDonors: { $ifNull: [{ $arrayElemAt: ["$donorStats.totalDonors", 0] }, 0] },
+				totalRevenue: { $ifNull: [{ $arrayElemAt: ["$donorStats.totalRevenue", 0] }, 0] }
+			}
+		},
+		{
+			$project: {
+				donorStats: 0,
+				passwordHash: 0
+			}
+		}
+	);
+
+	// If sorting by computed stats, we must sort after the lookup, then paginate
+	if (sortParam === "revenue_desc" || sortParam === "donors_desc") {
+		pipeline.push({ $sort: { [sortParam === "revenue_desc" ? "totalRevenue" : "totalDonors"]: -1 } });
+		pipeline.push({ $skip: skip });
+		pipeline.push({ $limit: limit });
+	}
+
 	const [coordinatorsRaw, total] = await Promise.all([
-		User.aggregate([
-			{ $match: matchStage },
-			{ $sort: { createdAt: -1 } },
-			{ $skip: skip },
-			{ $limit: limit },
-			{
-				$lookup: {
-					from: "donors",
-					localField: "_id",
-					foreignField: "createdBy",
-					as: "donorsList",
-				},
-			},
-			{
-				$addFields: {
-					totalDonors: { $size: "$donorsList" },
-					totalRevenue: { $sum: "$donorsList.amount" },
-				},
-			},
-			{
-				$project: {
-					donorsList: 0,
-				},
-			},
-		]),
+		User.aggregate(pipeline),
 		User.countDocuments(matchStage),
 	]);
 
 	const coordinators = JSON.parse(JSON.stringify(coordinatorsRaw));
-
 	const totalPages = Math.ceil(total / limit) || 1;
 
 	const getPageUrl = (p: number) => {
 		const params = new URLSearchParams();
 		if (query) params.set("query", query);
+		if (status !== "all") params.set("status", status);
+		if (joined !== "all") params.set("joined", joined);
+		if (sortParam !== "newest") params.set("sort", sortParam);
 		params.set("page", p.toString());
 		return `/admin/coordinators?${params.toString()}`;
 	};
 
 	return (
 		<div className="space-y-6 pb-12">
-			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
 				<div>
 					<h1 className="text-3xl font-bold tracking-tight text-slate-900">
 						Coordinators
@@ -97,15 +141,10 @@ export default async function AdminCoordinatorsPage(props: {
 						Manage platform coordinators and their access.
 					</p>
 				</div>
-				<Link
-					href="/admin/coordinators/new"
-					className={buttonVariants({
-						variant: "default",
-						className: "shadow-sm",
-					})}
-				>
-					+ Add Coordinator
-				</Link>
+				<div className="flex flex-col sm:flex-row items-end gap-3 w-full sm:w-auto">
+					<CoordinatorFilters />
+					<AddCoordinatorModal />
+				</div>
 			</div>
 
 			<Card className="border-slate-200 shadow-sm overflow-hidden">

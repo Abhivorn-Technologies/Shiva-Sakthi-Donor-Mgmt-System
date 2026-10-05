@@ -24,6 +24,13 @@ export const donorSchema = z
 		]),
 		otherPaymentMode: z.string().trim().optional(),
 		amount: z.coerce.number().min(1, "Amount must be greater than 0").finite(),
+		placeOfLiving: z.string().trim().optional(),
+		nativePlace: z.string().trim().optional(),
+		towards: z.string().trim().optional(),
+		donationType: z.enum(["Monthly", "Quarterly", "Yearly", "Occasional"]).optional(),
+		followingShivashakthiSince: z.string().trim().optional(),
+		comments: z.string().trim().optional(),
+		donationDate: z.coerce.date().optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (

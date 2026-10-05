@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import connectToDatabase from "@/lib/db/connect";
 import { DonorsFilter } from "./DonorsFilter";
+import { DonorRow } from "./DonorRow";
 import { Types } from "mongoose";
 import { Donor } from "@/models/Donor";
 import { User } from "@/models/User";
@@ -60,7 +61,7 @@ export default async function AdminDonorsPage({
 		}
 	}
 
-	const [donors, total, coordinatorsList] = await Promise.all([
+	const [donorsRaw, total, coordinatorsList] = await Promise.all([
 		Donor.find(matchStage)
 			.populate("createdBy", "fullName")
 			.sort({ donationDate: -1 })
@@ -71,6 +72,7 @@ export default async function AdminDonorsPage({
 		User.find({ role: "COORDINATOR" }).select("fullName").lean(),
 	]);
 
+	const donors = JSON.parse(JSON.stringify(donorsRaw));
 	const totalPages = Math.ceil(total / limit) || 1;
 
 	const getPageUrl = (p: number) => {
@@ -154,36 +156,7 @@ export default async function AdminDonorsPage({
 								</TableRow>
 							) : (
 								donors.map((donor: any) => (
-									<TableRow
-										key={donor._id.toString()}
-										className="hover:bg-slate-50 transition-colors"
-									>
-										<TableCell className="font-medium whitespace-nowrap text-slate-900">
-											{donor.fullName}
-										</TableCell>
-										<TableCell className="whitespace-nowrap">
-											<div className="text-sm text-slate-700">
-												{donor.email}
-											</div>
-											<div className="text-xs text-slate-500">
-												{donor.whatsappNumber}
-											</div>
-										</TableCell>
-										<TableCell className="font-bold text-emerald-600 whitespace-nowrap">
-											₹{donor.amount.toLocaleString("en-IN")}
-										</TableCell>
-										<TableCell className="whitespace-nowrap text-slate-600">
-											{donor.paymentMode}
-										</TableCell>
-										<TableCell className="text-sm text-slate-600 whitespace-nowrap">
-											{new Date(donor.donationDate).toLocaleDateString("en-GB")}
-										</TableCell>
-										<TableCell className="whitespace-nowrap">
-											<span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-												{donor.createdBy?.fullName || "Unknown"}
-											</span>
-										</TableCell>
-									</TableRow>
+									<DonorRow key={donor._id.toString()} donor={donor} />
 								))
 							)}
 						</TableBody>

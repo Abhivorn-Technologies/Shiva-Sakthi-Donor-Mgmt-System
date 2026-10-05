@@ -13,8 +13,9 @@ import {
 	Eye,
 	EyeOff,
 	Users,
+	Wand2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import {
 	DropdownMenu,
@@ -44,6 +45,16 @@ export function CoordinatorRow({ user }: { user: any }) {
 	const [isResetting, setIsResetting] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 
+	const generatePassword = () => {
+		const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+		let password = "";
+		for (let i = 0; i < 10; i++) {
+			password += chars.charAt(Math.floor(Math.random() * chars.length));
+		}
+		setNewPassword(password);
+		setShowPassword(true);
+	};
+
 	const handleResetPassword = async () => {
 		if (newPassword.length < 6) {
 			toast.error("Password must be at least 6 characters.");
@@ -61,9 +72,23 @@ export function CoordinatorRow({ user }: { user: any }) {
 		setIsResetting(false);
 	};
 
+	const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+	const handleRowClick = (e: React.MouseEvent) => {
+		// Prevent opening details if clicking on the dropdown or inside it
+		const target = e.target as Element;
+		if (target.closest && target.closest('[data-radix-collection-item], button')) {
+			return;
+		}
+		setDetailsDialogOpen(true);
+	};
+
 	return (
 		<>
-			<TableRow className="hover:bg-slate-50 transition-colors">
+			<TableRow 
+				className="hover:bg-slate-50 transition-colors cursor-pointer"
+				onClick={handleRowClick}
+			>
 				<TableCell className="font-medium text-slate-900">
 					{user.fullName}
 				</TableCell>
@@ -91,12 +116,7 @@ export function CoordinatorRow({ user }: { user: any }) {
 				<TableCell>
 					<DropdownMenu>
 						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="ghost"
-									className="h-8 w-8 p-0 hover:bg-slate-100"
-								/>
-							}
+							className={buttonVariants({ variant: "ghost", className: "h-8 w-8 p-0 hover:bg-slate-100" })}
 						>
 							<span className="sr-only">Open menu</span>
 							<MoreHorizontal className="h-4 w-4 text-slate-500" />
@@ -154,6 +174,25 @@ export function CoordinatorRow({ user }: { user: any }) {
 				</TableCell>
 			</TableRow>
 
+			<Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+				<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="text-xl font-bold">Coordinator Details</DialogTitle>
+					</DialogHeader>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+						<DetailItem label="Full Name" value={user.fullName} />
+						<DetailItem label="Email" value={user.email} />
+						<DetailItem label="Status" value={user.isActive ? "Active" : "Inactive"} />
+						<DetailItem label="Joined Date" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "-"} />
+						<DetailItem label="Total Donors" value={user.totalDonors || 0} />
+						<DetailItem label="Total Revenue" value={`₹${(user.totalRevenue || 0).toLocaleString("en-IN")}`} />
+						
+						{user.phoneNumber && <DetailItem label="Phone Number" value={user.phoneNumber} />}
+						{user.location && <DetailItem label="Location" value={user.location} />}
+					</div>
+				</DialogContent>
+			</Dialog>
+
 			<Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
@@ -185,6 +224,16 @@ export function CoordinatorRow({ user }: { user: any }) {
 								)}
 							</button>
 						</div>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={generatePassword}
+							className="shrink-0"
+							title="Auto-generate password"
+						>
+							<Wand2 className="h-4 w-4 mr-2" />
+							Generate
+						</Button>
 					</div>
 					<DialogFooter className="sm:justify-end">
 						<Button
@@ -205,5 +254,14 @@ export function CoordinatorRow({ user }: { user: any }) {
 				</DialogContent>
 			</Dialog>
 		</>
+	);
+}
+
+function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
+	return (
+		<div>
+			<span className="text-xs text-slate-500 font-semibold block">{label}</span>
+			<span className="text-sm text-slate-900 font-medium">{value}</span>
+		</div>
 	);
 }

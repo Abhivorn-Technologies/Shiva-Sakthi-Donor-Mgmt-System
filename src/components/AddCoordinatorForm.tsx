@@ -13,13 +13,13 @@ import {
 	CardDescription,
 } from "@/components/ui/card";
 import { useFormStatus } from "react-dom";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, UserPlus, Phone, MapPin } from "lucide-react";
 
 function SubmitButton() {
 	const { pending } = useFormStatus();
 	return (
 		<Button 
-			className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition-all hover:shadow-lg mt-6 h-11 text-base font-medium" 
+			className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition-all hover:shadow-lg mt-4 h-10 text-sm font-medium" 
 			type="submit" 
 			disabled={pending}
 		>
@@ -47,35 +47,37 @@ export function AddCoordinatorForm() {
 	return (
 		<Card className="w-full border-slate-200/60 shadow-xl overflow-hidden bg-white/80 backdrop-blur-sm">
 			<div className="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-			<CardHeader className="pb-6 pt-8">
-				<div className="flex justify-center mb-4">
-					<div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100 shadow-sm">
-						<UserPlus className="w-6 h-6 text-blue-600" />
+			<CardHeader className="pb-2 pt-6">
+				<div className="flex justify-center mb-2">
+					<div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100 shadow-sm">
+						<UserPlus className="w-5 h-5 text-blue-600" />
 					</div>
 				</div>
-				<CardTitle className="text-center text-2xl font-bold text-slate-900">
+				<CardTitle className="text-center text-xl font-bold text-slate-900">
 					Create Coordinator
 				</CardTitle>
-				<CardDescription className="text-center text-slate-500">
+				<CardDescription className="text-center text-xs text-slate-500">
 					Enter details to add a new coordinator to the system.
 				</CardDescription>
 			</CardHeader>
-			<CardContent className="px-6 sm:px-8 pb-8">
-				<form action={formAction} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="fullName">
-							Full Name <span className="text-rose-500">*</span>
-						</Label>
-						<Input id="fullName" name="fullName" required minLength={2} />
+			<CardContent className="px-4 sm:px-6 pb-6">
+				<form action={formAction} className="space-y-3">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div className="space-y-1">
+							<Label htmlFor="fullName" className="text-xs">
+								Full Name <span className="text-rose-500">*</span>
+							</Label>
+							<Input id="fullName" name="fullName" required minLength={2} className="h-9" />
+						</div>
+						<div className="space-y-1">
+							<Label htmlFor="email" className="text-xs">
+								Email <span className="text-rose-500">*</span>
+							</Label>
+							<Input id="email" name="email" type="email" required className="h-9" />
+						</div>
 					</div>
-					<div className="space-y-2">
-						<Label htmlFor="email">
-							Email <span className="text-rose-500">*</span>
-						</Label>
-						<Input id="email" name="email" type="email" required />
-					</div>
-					<div className="space-y-2">
-						<Label htmlFor="password">
+					<div className="space-y-1">
+						<Label htmlFor="password" className="text-xs">
 							Password <span className="text-rose-500">*</span>
 						</Label>
 						<div className="flex gap-2">
@@ -88,7 +90,7 @@ export function AddCoordinatorForm() {
 									minLength={6}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									className="pr-10"
+									className="pr-10 h-9"
 								/>
 								<button
 									type="button"
@@ -102,9 +104,39 @@ export function AddCoordinatorForm() {
 								type="button"
 								variant="outline"
 								onClick={generatePassword}
+								className="h-9"
 							>
 								Auto-generate
 							</Button>
+						</div>
+					</div>
+					
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div className="space-y-1">
+							<Label htmlFor="phoneNumber" className="text-xs">Phone Number (Optional)</Label>
+							<div className="relative">
+								<Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+								<Input
+									id="phoneNumber"
+									name="phoneNumber"
+									type="tel"
+									placeholder="e.g. 9876543210"
+									className="pl-10 h-9"
+								/>
+							</div>
+						</div>
+
+						<div className="space-y-1">
+							<Label htmlFor="location" className="text-xs">Location (Optional)</Label>
+							<div className="relative">
+								<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+								<Input
+									id="location"
+									name="location"
+									placeholder="e.g. Hyderabad"
+									className="pl-10 h-9"
+								/>
+							</div>
 						</div>
 					</div>
 

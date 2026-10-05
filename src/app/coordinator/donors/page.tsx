@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/pagination";
 import { AddDonationModal } from "@/components/AddDonationModal";
 import { DonorFilters } from "@/components/DonorFilters";
+import { CoordinatorDonorRow } from "./CoordinatorDonorRow";
 
 export default async function CoordinatorDonorsPage({
 	searchParams,
@@ -71,7 +72,7 @@ export default async function CoordinatorDonorsPage({
 		};
 	}
 
-	const [donors, total] = await Promise.all([
+	const [donorsRaw, total] = await Promise.all([
 		Donor.find(matchStage)
 			.sort({ donationDate: -1 })
 			.skip(skip)
@@ -80,6 +81,7 @@ export default async function CoordinatorDonorsPage({
 		Donor.countDocuments(matchStage),
 	]);
 
+	const donors = JSON.parse(JSON.stringify(donorsRaw));
 	const totalPages = Math.ceil(total / limit) || 1;
 
 	const getPageUrl = (p: number) => {
@@ -136,7 +138,7 @@ export default async function CoordinatorDonorsPage({
 							{donors.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={6}
 										className="text-center py-8 text-slate-500"
 									>
 										No donors found.
@@ -144,41 +146,7 @@ export default async function CoordinatorDonorsPage({
 								</TableRow>
 							) : (
 								donors.map((donor: any) => (
-									<TableRow
-										key={donor._id.toString()}
-										className="hover:bg-slate-50 transition-colors"
-									>
-										<TableCell className="font-medium whitespace-nowrap text-slate-900">
-											{donor.fullName}
-										</TableCell>
-										<TableCell className="whitespace-nowrap">
-											<div className="text-sm text-slate-700">
-												{donor.email}
-											</div>
-											<div className="text-xs text-slate-500">
-												{donor.whatsappNumber}
-											</div>
-										</TableCell>
-										<TableCell className="font-bold text-emerald-600 whitespace-nowrap">
-											₹{donor.amount.toLocaleString("en-IN")}
-										</TableCell>
-										<TableCell className="whitespace-nowrap text-slate-600">
-											{donor.paymentMode}
-										</TableCell>
-										<TableCell className="text-sm text-slate-600 whitespace-nowrap">
-											{new Date(donor.donationDate).toLocaleDateString("en-GB")}
-										</TableCell>
-										<TableCell className="text-right whitespace-nowrap">
-											<AddDonationModal
-												donor={{
-													fullName: donor.fullName,
-													email: donor.email,
-													whatsappNumber: donor.whatsappNumber,
-													occupation: donor.occupation,
-												}}
-											/>
-										</TableCell>
-									</TableRow>
+									<CoordinatorDonorRow key={donor._id.toString()} donor={donor} />
 								))
 							)}
 						</TableBody>

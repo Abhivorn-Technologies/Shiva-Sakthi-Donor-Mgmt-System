@@ -14,6 +14,8 @@ const coordinatorSchema = z.object({
 	fullName: z.string().min(1, "Name is required"),
 	email: z.string().email("Invalid email").transform(v => v.trim().toLowerCase()),
 	password: z.string().min(6, "Password must be at least 6 characters"),
+	phoneNumber: z.string().optional(),
+	location: z.string().optional(),
 });
 
 export async function deactivateCoordinator(id: string, isActive: boolean) {
@@ -39,7 +41,7 @@ export async function createCoordinator(prevState: any, formData: FormData) {
 		if (!result.success) {
 			return { error: result.error.errors[0].message };
 		}
-		const { fullName, email, password } = result.data;
+		const { fullName, email, password, phoneNumber, location } = result.data;
 
 		await connectToDatabase();
 		const passwordHash = await bcrypt.hash(password, 10);
@@ -50,6 +52,8 @@ export async function createCoordinator(prevState: any, formData: FormData) {
 			passwordHash,
 			role: "COORDINATOR",
 			isActive: true,
+			phoneNumber,
+			location,
 		});
 
 		await newCoord.save();
