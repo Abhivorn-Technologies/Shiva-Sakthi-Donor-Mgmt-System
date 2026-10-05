@@ -51,6 +51,12 @@ export function CoordinatorDonorRow({ donor }: { donor: any }) {
               email: donor.email,
               whatsappNumber: donor.whatsappNumber,
               occupation: donor.occupation,
+              placeOfLiving: donor.placeOfLiving,
+              nativePlace: donor.nativePlace,
+              towards: donor.towards,
+              donationType: donor.donationType,
+              followingShivashakthiSince: donor.followingShivashakthiSince,
+              comments: donor.comments,
             }}
           />
         </TableCell>

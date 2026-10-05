@@ -69,6 +69,7 @@ export default async function AdminDashboard(props: {
 		thisMonthAmountAggr,
 		lastMonthAmountAggr,
 		coordinatorCollections,
+		last7DaysAmountAggr,
 	] = await Promise.all([
 		Donor.countDocuments(),
 		Donor.aggregate([
@@ -118,6 +119,10 @@ export default async function AdminDashboard(props: {
 			{ $project: { name: "$coordinator.fullName", amount: "$totalAmount" } },
 			{ $sort: { amount: -1 } }
 		]),
+		Donor.aggregate([
+			{ $match: { donationDate: { $gte: sevenDaysAgo } } },
+			{ $group: { _id: null, totalAmount: { $sum: "$amount" } } },
+		]),
 	]);
 
 	const totalAmount = totalDonationAmount[0]?.totalAmount || 0;
@@ -127,6 +132,7 @@ export default async function AdminDashboard(props: {
 	const lastYearAmount = lastYearAmountAggr[0]?.totalAmount || 0;
 	const thisMonthAmount = thisMonthAmountAggr[0]?.totalAmount || 0;
 	const lastMonthAmount = lastMonthAmountAggr[0]?.totalAmount || 0;
+	const last7DaysAmount = last7DaysAmountAggr[0]?.totalAmount || 0;
 
 	const calcGrowth = (current: number, previous: number) => {
 		if (previous === 0) return current > 0 ? 100 : 0;
@@ -357,8 +363,13 @@ export default async function AdminDashboard(props: {
 							</CardHeader>
 							<CardContent className="p-4 space-y-3">
 								<div className="flex justify-between items-center text-sm">
+									<span className="text-slate-600">Last 7 Days</span>
+									<span className="font-bold text-emerald-600">₹{last7DaysAmount.toLocaleString("en-IN")}</span>
+								</div>
+								<div className="h-px bg-slate-100 w-full" />
+								<div className="flex justify-between items-center text-sm">
 									<span className="text-slate-600">This Month</span>
-									<span className="font-bold text-emerald-600">₹{thisMonthAmount.toLocaleString("en-IN")}</span>
+									<span className="font-bold text-slate-900">₹{thisMonthAmount.toLocaleString("en-IN")}</span>
 								</div>
 								<div className="h-px bg-slate-100 w-full" />
 								<div className="flex justify-between items-center text-sm">

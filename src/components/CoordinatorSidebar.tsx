@@ -53,7 +53,7 @@ export function CoordinatorSidebar({
 			</button>
 			
 			<div>
-				<div className={`p-6 flex items-center ${isMounted && isCollapsed ? "justify-center px-4" : "gap-3"}`}>
+				<Link href="/coordinator/dashboard" className={`p-6 flex items-center hover:opacity-80 transition-opacity ${isMounted && isCollapsed ? "justify-center px-4" : "gap-3"}`}>
 					<div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
 						<HeartHandshake className="w-6 h-6" />
 					</div>
@@ -67,7 +67,7 @@ export function CoordinatorSidebar({
 							</div>
 						</div>
 					)}
-				</div>
+				</Link>
 				<nav className="px-4 space-y-1 mt-2">
 					{navItems.map((item) => {
 						const isActive = pathname.startsWith(item.match);

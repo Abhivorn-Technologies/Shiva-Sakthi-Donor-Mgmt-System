@@ -45,8 +45,10 @@ export function CoordinatorHeader({
 					>
 						<div>
 							<SheetHeader className="p-6 text-left border-b">
-								<SheetTitle className="font-bold text-xl tracking-tight text-blue-600">
-									Donor Management
+								<SheetTitle>
+									<Link href="/coordinator/dashboard" onClick={() => setOpen(false)} className="font-bold text-xl tracking-tight text-blue-600 hover:opacity-80 transition-opacity">
+										Donor Management
+									</Link>
 								</SheetTitle>
 							</SheetHeader>
 							<nav className="px-4 py-4 space-y-2">
@@ -81,9 +83,9 @@ export function CoordinatorHeader({
 					</SheetContent>
 				</Sheet>
 
-				<div className="font-bold text-lg tracking-tight text-blue-600">
+				<Link href="/coordinator/dashboard" className="font-bold text-lg tracking-tight text-blue-600 hover:opacity-80 transition-opacity">
 					Donor Management
-				</div>
+				</Link>
 			</div>
 
 			<div className="flex items-center">

@@ -63,7 +63,7 @@ export function AdminSidebar({
 			</button>
 			
 			<div className="flex flex-col h-full">
-				<div className={`p-5 flex items-center ${isMounted && isCollapsed ? "justify-center" : "gap-3"}`}>
+				<Link href="/admin/dashboard" className={`p-5 flex items-center hover:opacity-80 transition-opacity ${isMounted && isCollapsed ? "justify-center" : "gap-3"}`}>
 					<div className="bg-blue-600 p-2 rounded-lg shrink-0 shadow-sm shadow-blue-200">
 						<LayoutDashboard className="w-5 h-5 text-white" />
 					</div>
@@ -77,7 +77,7 @@ export function AdminSidebar({
 							</div>
 						</div>
 					)}
-				</div>
+				</Link>
 
 				<div className="flex-1 overflow-y-auto px-3 py-2 space-y-8 scrollbar-hide">
 					<div>

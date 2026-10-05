@@ -30,7 +30,7 @@ export function AddDonationModal({ donor }: { donor: { fullName: string; email: 
 				<PlusCircle className="w-4 h-4 mr-1" />
 				Add Donation
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[425px] p-0 border-none bg-transparent shadow-none">
+			<DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent shadow-none">
 				<DialogHeader className="sr-only">
 					<DialogTitle>Add Donation Again</DialogTitle>
 					<DialogDescription>
